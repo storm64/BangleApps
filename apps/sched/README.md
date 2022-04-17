@@ -8,8 +8,17 @@ Other apps can use this to provide alarm functionality.
 App
 ---
 
-The Alarm app allows you to add/modify any running timers.
+The **Alarms & Timers** app allows you to add/modify any running alarms and timers.
 
+Global Settings
+---------------
+
+- `Unlock at Buzz` - If `Yes` the alarm/timer will unlock the watch
+- `Auto Snooze` - Default *Auto Snooze* value for newly created alarms (_Alarms_ only)
+- `Snooze` - Default *Snooze* value for newly created alarms/timers
+- `No. Buzz` - The number of buzz before the watch goes silent
+- `Buzz Interval` - The interval between one buzz and the next
+- `Alarms/Timers Pattern` - Default vibration pattern for newly created alarms/timers
 
 Internals / Library
 -------------------
