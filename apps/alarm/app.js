@@ -1,8 +1,10 @@
 Bangle.loadWidgets();
 Bangle.drawWidgets();
 
-var alarms = require("sched").getAlarms();
 // An array of alarm objects (see sched/README.md)
+var alarms = require("sched").getAlarms();
+
+const SCHED_SETTINGS_FILE = "sched.settings.json";
 
 // time in ms -> { hrs, mins }
 function decodeTime(t) {
@@ -91,15 +93,18 @@ function editDOW(dow, onchange) {
 
 function editAlarm(alarmIndex, alarm) {
   var newAlarm = alarmIndex<0;
+  let schedulerSettings = require("Storage").readJSON(SCHED_SETTINGS_FILE, true) || {};
   var a = {
     t : 12*3600000, // 12 o clock default
     on : true,
     rp : false, // repeat not the default
-    as : false,
+    as : schedulerSettings.autoSnooze || false,
     dow : 0b1111111,
     last : 0,
-    vibrate : ".."
+    vibrate : schedulerSettings.buzzPatternAlarms || "..",
   }
+  delete schedulerSettings;
+
   if (!newAlarm) Object.assign(a, alarms[alarmIndex]);
   if (alarm) Object.assign(a,alarm);
   var t = decodeTime(a.t);
@@ -156,6 +161,7 @@ function editAlarm(alarmIndex, alarm) {
 
 function editTimer(alarmIndex, alarm) {
   var newAlarm = alarmIndex<0;
+  let schedulerSettings = require("Storage").readJSON(SCHED_SETTINGS_FILE, true) || {};
   var a = {
     timer : 5*60*1000, // 5 minutes
     on : true,
@@ -163,8 +169,9 @@ function editTimer(alarmIndex, alarm) {
     as : false,
     dow : 0b1111111,
     last : 0,
-    vibrate : ".."
+    vibrate : schedulerSettings.buzzPatternTimers || ".."
   }
+  delete schedulerSettings;
   if (!newAlarm) Object.assign(a, alarms[alarmIndex]);
   if (alarm) Object.assign(a,alarm);
   var t = decodeTime(a.timer);
