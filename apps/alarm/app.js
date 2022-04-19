@@ -92,19 +92,8 @@ function editDOW(dow, onchange) {
 }
 
 function editAlarm(alarmIndex, alarm) {
-  var newAlarm = alarmIndex<0;
-  let schedulerSettings = require("Storage").readJSON(SCHED_SETTINGS_FILE, true) || {};
-  var a = {
-    t : 12*3600000, // 12 o clock default
-    on : true,
-    rp : false, // repeat not the default
-    as : schedulerSettings.autoSnooze || false,
-    dow : 0b1111111,
-    last : 0,
-    vibrate : schedulerSettings.buzzPatternAlarms || "..",
-  }
-  delete schedulerSettings;
-
+  let newAlarm = alarmIndex<0;
+  let a = require("sched").newDefaultAlarm();
   if (!newAlarm) Object.assign(a, alarms[alarmIndex]);
   if (alarm) Object.assign(a,alarm);
   var t = decodeTime(a.t);
@@ -161,17 +150,7 @@ function editAlarm(alarmIndex, alarm) {
 
 function editTimer(alarmIndex, alarm) {
   var newAlarm = alarmIndex<0;
-  let schedulerSettings = require("Storage").readJSON(SCHED_SETTINGS_FILE, true) || {};
-  var a = {
-    timer : 5*60*1000, // 5 minutes
-    on : true,
-    rp : false,
-    as : false,
-    dow : 0b1111111,
-    last : 0,
-    vibrate : schedulerSettings.buzzPatternTimers || ".."
-  }
-  delete schedulerSettings;
+  let a = require("sched").newDefaultTimer();
   if (!newAlarm) Object.assign(a, alarms[alarmIndex]);
   if (alarm) Object.assign(a,alarm);
   var t = decodeTime(a.timer);

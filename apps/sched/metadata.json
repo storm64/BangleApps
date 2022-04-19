@@ -1,7 +1,7 @@
 {
   "id": "sched",
   "name": "Scheduler",
-  "version": "0.04",
+  "version": "0.04b3",
   "description": "Scheduling library for alarms and timers",
   "icon": "app.png",
   "type": "scheduler",

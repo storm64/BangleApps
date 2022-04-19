@@ -1,20 +1,6 @@
 (function (back) {
 
-  const FILE = "sched.settings.json";
-
-  let settings = Object.assign({
-    unlockAtBuzz: false,
-    autoSnooze: false,
-    snoozeMillis: 600000, // 10min
-    buzzCount: 10,
-    buzzIntervalMillis: 3000,
-    buzzPatternAlarms: "..",
-    buzzPatternTimers: ".."
-  }, require("Storage").readJSON(FILE, true) || {});
-
-  function writeSettings() {
-    require("Storage").writeJSON(FILE, settings);
-  }
+  let settings = require("sched").getSettings();
 
   E.showMenu({
 
@@ -27,16 +13,16 @@
       format: v => v ? /*LANG*/"Yes" : /*LANG*/"No",
       onchange: v => {
         settings.unlockAtBuzz = v;
-        writeSettings();
+        require("sched").setSettings(settings);
       }
     },
 
-    /*LANG*/"Auto Snooze": {
-      value: settings.autoSnooze,
+    /*LANG*/"Default Auto Snooze": {
+      value: settings.defaultAutoSnooze,
       format: v => v ? /*LANG*/"Yes" : /*LANG*/"No",
       onchange: v => {
-        settings.autoSnooze = v;
-        writeSettings();
+        settings.defaultAutoSnooze = v;
+        require("sched").setSettings(settings);
       }
     },
 
@@ -48,18 +34,18 @@
       format: v => v + /*LANG*/" min",
       onchange: v => {
         settings.snoozeMillis = v * 60000;
-        writeSettings();
+        require("sched").setSettings(settings);
       }
     },
 
-    /*LANG*/"No. Buzz": {
+    /*LANG*/"Buzz Count": {
       value: settings.buzzCount,
       min: 5,
       max: 15,
       step: 1,
       onchange: v => {
         settings.buzzCount = v;
-        writeSettings();
+        require("sched").setSettings(settings);
       }
     },
 
@@ -71,18 +57,18 @@
       format: v => v + /*LANG*/"s",
       onchange: v => {
         settings.buzzIntervalMillis = v * 1000;
-        writeSettings();
+        require("sched").setSettings(settings);
       }
     },
 
-    /*LANG*/"Alarms Pattern": require("buzz_menu").pattern(settings.buzzPatternAlarms, v => {
-      settings.buzzPatternAlarms = v;
-      writeSettings();
+    /*LANG*/"Default Alarm Pattern": require("buzz_menu").pattern(settings.defaultAlarmPattern, v => {
+      settings.defaultAlarmPattern = v;
+      require("sched").setSettings(settings);
     }),
 
-    /*LANG*/"Timers Pattern": require("buzz_menu").pattern(settings.buzzPatternTimers, v => {
-      settings.buzzPatternTimers = v;
-      writeSettings();
+    /*LANG*/"Default Timer Pattern": require("buzz_menu").pattern(settings.defaultTimerPattern, v => {
+      settings.defaultTimerPattern = v;
+      require("sched").setSettings(settings);
     })
 
   });

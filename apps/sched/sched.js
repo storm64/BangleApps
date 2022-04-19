@@ -18,14 +18,7 @@ function formatTime(t) {
 }
 
 function showAlarm(alarm) {
-  let settings = Object.assign({
-    // set defaults only for used options
-    unlockAtBuzz: false,
-    snoozeMillis: 600000, // 10min
-    autoSnooze: false,
-    buzzCount: 10,
-    buzzIntervalMillis: 3000 // 3s
-  }, require("Storage").readJSON("sched.settings.json", true) || {});
+  let settings = require("sched").getSettings();
 
   let msg = "";
   msg += alarm.timer ? formatTime(alarm.timer) : formatTime(alarm.t);
