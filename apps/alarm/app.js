@@ -84,6 +84,8 @@ function editDOW(dow, onchange) {
 }
 
 function editAlarm(alarmIndex, alarm) {
+  let settings = Object.assign({ saveOnBack: false }, require("Storage").readJSON("alarm.json", true) || {});
+
   let newAlarm = alarmIndex < 0;
   let a = require("sched").newDefaultAlarm();
   if (!newAlarm) Object.assign(a, alarms[alarmIndex]);
@@ -92,7 +94,12 @@ function editAlarm(alarmIndex, alarm) {
 
   const menu = {
     '': { 'title': /*LANG*/'Alarm' },
-    /*LANG*/'< Back' : () => showMainMenu(),
+    /*LANG*/'< Back': () => {
+      if (settings.saveOnBack) {
+        saveAlarm(newAlarm, alarmIndex, a, t);
+      }
+      showMainMenu();
+    },
     /*LANG*/'Hours': {
       value: t.hrs, min : 0, max : 23, wrap : true,
       onchange: v => t.hrs=v
@@ -126,25 +133,41 @@ function editAlarm(alarmIndex, alarm) {
       onchange: v => a.as = v
     }
   };
-  menu[/*LANG*/"Save"] = function() {
-    a.t = require("sched").encodeTime(t);
-    a.last = (a.t < getCurrentTime()) ? (new Date()).getDate() : 0;
-    if (newAlarm) alarms.push(a);
-    else alarms[alarmIndex] = a;
-    saveAndReload();
-    showMainMenu();
-  };
+
+  if (settings.saveOnBack) {
+    menu[/*LANG*/"Cancel"] = () => showMainMenu();
+  } else {
+    menu[/*LANG*/"Save"] = () => saveAlarm(newAlarm, alarmIndex, a, t);
+  }
+
   if (!newAlarm) {
     menu[/*LANG*/"Delete"] = function() {
-      alarms.splice(alarmIndex,1);
+      alarms.splice(alarmIndex, 1);
       saveAndReload();
       showMainMenu();
     };
   }
+
   return E.showMenu(menu);
 }
 
+function saveAlarm(newAlarm, alarmIndex, a, t) {
+  a.t = require("sched").encodeTime(t);
+  a.last = (a.t < getCurrentTime()) ? (new Date()).getDate() : 0;
+
+  if (newAlarm) {
+    alarms.push(a);
+  } else {
+    alarms[alarmIndex] = a;
+  }
+
+  saveAndReload();
+  showMainMenu();
+}
+
 function editTimer(alarmIndex, alarm) {
+  let settings = Object.assign({ saveOnBack: false }, require("Storage").readJSON("alarm.json", true) || {});
+
   let newAlarm = alarmIndex < 0;
   let a = require("sched").newDefaultTimer();
   if (!newAlarm) Object.assign(a, alarms[alarmIndex]);
@@ -153,7 +176,12 @@ function editTimer(alarmIndex, alarm) {
 
   const menu = {
     '': { 'title': /*LANG*/'Timer' },
-    /*LANG*/'< Back' : () => showMainMenu(),
+    /*LANG*/'< Back': () => {
+      if (settings.saveOnBack) {
+        saveTimer(newAlarm, alarmIndex, a, t);
+      }
+      showMainMenu();
+    },
     /*LANG*/'Hours': {
       value: t.hrs, min : 0, max : 23, wrap : true,
       onchange: v => t.hrs=v
@@ -169,15 +197,13 @@ function editTimer(alarmIndex, alarm) {
     },
     /*LANG*/'Vibrate': require("buzz_menu").pattern(a.vibrate, v => a.vibrate=v ),
   };
-  menu[/*LANG*/"Save"] = function() {
-    a.timer = require("sched").encodeTime(t);
-    a.t = getCurrentTime() + a.timer;
-    a.last = 0;
-    if (newAlarm) alarms.push(a);
-    else alarms[alarmIndex] = a;
-    saveAndReload();
-    showMainMenu();
-  };
+   
+  if (settings.saveOnBack) {
+    menu[/*LANG*/"Cancel"] = () => showMainMenu();
+  } else {
+    menu[/*LANG*/"Save"] = () => saveTimer(newAlarm, alarmIndex, a, t);
+  }
+
   if (!newAlarm) {
     menu[/*LANG*/"Delete"] = function() {
       alarms.splice(alarmIndex,1);
@@ -186,6 +212,16 @@ function editTimer(alarmIndex, alarm) {
     };
   }
   return E.showMenu(menu);
+}
+
+function saveTimer(newAlarm, alarmIndex, a, t) {
+  a.timer = require("sched").encodeTime(t);
+  a.t = getCurrentTime() + a.timer;
+  a.last = 0;
+  if (newAlarm) alarms.push(a);
+  else alarms[alarmIndex] = a;
+  saveAndReload();
+  showMainMenu();
 }
 
 showMainMenu();
