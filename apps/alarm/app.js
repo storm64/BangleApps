@@ -29,22 +29,37 @@ function showMainMenu() {
   };
   alarms.forEach((alarm,idx)=>{
     var type,txt; // a leading space is currently required (JS error in Espruino 2v12)
+    
+    var formattedTime;
     if (alarm.timer) {
       type = /*LANG*/"Timer";
-      txt = " "+require("sched").formatTime(alarm.timer);
+      formattedTime = require("sched").formatTime(alarm.timer);
     } else {
       type = /*LANG*/"Alarm";
-      txt = " "+require("sched").formatTime(alarm.t);
+      formattedTime = require("sched").formatTime(alarm.t);
     }
+
+    txt = " " + formattedTime
+
     if (alarm.rp) txt += "\0"+atob("FBaBAAABgAAcAAHn//////wAHsABzAAYwAAMAADAAAAAAwAAMAADGAAzgAN4AD//////54AAOAABgAA=");
+    
+    var key = "";
+    key += (type + " " + formattedTime);
+
+    if (alarm.rp) {
+      key += "\nRepeat on " + decodeDOW(alarm.dow);
+    }
+
     // rename duplicate alarms
-    if (menu[type+txt]) {
+    if (menu[key]) {
       var n = 2;
       while (menu[type+" "+n+txt]) n++;
       txt = type+" "+n+txt;
     } else txt = type+txt;
+    
     // add to menu
-    menu[txt] = {
+
+    menu[key] = {
       value : "\0"+atob(alarm.on?"EhKBAH//v/////////////5//x//j//H+eP+Mf/A//h//z//////////3//g":"EhKBAH//v//8AA8AA8AA8AA8AA8AA8AA8AA8AA8AA8AA8AA8AA8AA///3//g"),
       onchange : function() {
         if (alarm.timer) editTimer(idx, alarm);
@@ -115,7 +130,7 @@ function editAlarm(alarmIndex, alarm) {
       onchange: v => a.rp = v
     },
     /*LANG*/'Days': {
-      value: "SMTWTFS".split("").map((d,n)=>a.dow&(1<<n)?d:".").join(""),
+      value: decodeDOW(a.dow),
       onchange: () => editDOW(a.dow, d => {
         a.dow = d;
         a.t = require("sched").encodeTime(t);
@@ -209,6 +224,10 @@ function saveTimer(newAlarm, alarmIndex, a, t) {
   }
 
   saveAndReload();
+}
+
+function decodeDOW(dow) {
+  return require("date_utils").getDOWs(2).map((day, index) => dow & (1 << index) ? day : "_").join("");
 }
 
 function enableAll(on) {
