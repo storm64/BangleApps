@@ -5,7 +5,7 @@ var TUdecodeTime = require("time_utils").decodeTime;
 var DUdows = require("date_utils").dows;
 
 /*** define global variables ***/
-var triggerHandler = {}, modCache = {}, selection = {};
+var triggerHandler = {}, modCache = {}, selection = {}, touchAreas = [];
 
 /*** storage functions ***/
 function tileRect(tile) { return [
@@ -247,11 +247,18 @@ function updateMod(module, time) {
       selection[tile].pages = tmp[field].length;
       // check if pages available
       if (selection[tile].pages) {
-        // activate selection
-        selection[tile].active = true;
+        // add touch area
+        var rect = tileRect(tile);
+        touchAreas.push({
+          x: rect.x, y: rect.y,
+          x2: rect.x2, y2: rect.y2,
+          tile: tile
+        });
       } else {
         // remove trigger
         triggerHandler.remove(updateOn(field), field);
+        // filter this tile from the touch areas
+        touchAreas = touchAreas.filter(a => a.tile !== tile);
       }
     });
   }
@@ -294,7 +301,6 @@ function registerTriggers() {
       var tile = clock.tiles.indexOf(field);
       // set selection object
       selection[tile] = {
-        active: false,
         opt: clock.sel[field][0],
         opts: clock.sel[field][1],
         page: 0,
@@ -326,21 +332,22 @@ function registerTriggers() {
 /*** hid functions ***/
 function touchHandler(tile) {
   var sel = selection[tile];
-  if (++sel.opt >= sel.opts) {
-    sel.opt = 0;
-    if (++sel.page >= sel.pages) sel.page = 0;
+  if (sel) {
+    if (++sel.opt >= sel.opts) {
+      sel.opt = 0;
+      if (++sel.page >= sel.pages) sel.page = 0;
+    }
+    drawValue(clock.tiles[tile], new Date(( 0 | Date.now() / 6E4 ) * 6E4));
   }
-  drawValue(clock.tiles[tile], new Date(( 0 | Date.now() / 6E4 ) * 6E4));
 }
 function touchListener(b, c) {
-  // check if inside any active tile
-  Object.keys(selection).filter(t => selection[t].active).forEach(tile => {
-    var a = tileRect(tile);
-    if (!(c.x < a.x || c.x > (a.x + a.w) || c.y < a.y || c.y > (a.y + a.h))) {
-      Bangle.buzz(25);
-      touchHandler(tile);
-    }
-  });
+  // check if inside any touch area
+  var tile = (touchAreas.filter(a => c.x >= a.x && c.x <= a.x2 && c.y >= a.y && c.y <= a.y2)[0] || {}).tile;
+  // give feedback und execute handler if found 
+  if (tile) {
+    Bangle.buzz(25);
+    touchHandler(tile);
+  }
 }
 function setupHID() {
   // setup user interface
