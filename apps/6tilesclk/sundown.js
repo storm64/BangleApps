@@ -305,7 +305,7 @@ exports = function(d, lat, lon) {
   if (lat === undefined) {
     lat = Storage.readJSON("mylocation.json", 1);
     if (lat === undefined) return;
-  };
+  }
   if (lon === undefined) {
     lon = lat.lon;
     lat = lat.lat;
