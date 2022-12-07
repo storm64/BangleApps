@@ -6,36 +6,39 @@ var DUdows = require("date_utils").dows;
 
 /*** define global variables ***/
 var triggerHandler = {}, modCache = {}, selection = {}, touchAreas = [];
+var tileRect = [
+  {x: 1, y: 100, x2: 56, y2: 135},
+  {x: 60, y: 100, x2: 115, y2: 135},
+  {x: 119, y: 100, x2: 174, y2: 135},
+  {x: 1, y: 139, x2: 56, y2: 174},
+  {x: 60, y: 139, x2: 115, y2: 174},
+  {x: 119, y: 139, x2: 174, y2: 174}
+];
+var infoRect = [
+  {x: 1, y: 139, x2: 174, y2: 174},
+  {x: 1, y: 100, x2: 174, y2: 174}
+];
+
 
 /*** storage functions ***/
-function tileRect(tile) { return [
-  {x: 1, y: 100, w: 55, h: 35, x2: 56, y2: 135},
-  {x: 60, y: 100, w: 55, h: 35, x2: 115, y2: 135},
-  {x: 119, y: 100, w: 55, h: 35, x2: 174, y2: 135},
-  {x: 1, y: 139, w: 55, h: 35, x2: 56, y2: 174},
-  {x: 60, y: 139, w: 55, h: 35, x2: 115, y2: 174},
-  {x: 119, y: 139, w: 55, h: 35, x2: 174, y2: 174}
-][tile]; }
-function infoRect(full) { return [
-  {x: 1, y: 139, w: 173, h: 35, x2: 174, y2: 174},
-  {x: 1, y: 100, w: 173, h: 74, x2: 174, y2: 174}
-][full ? 1 : 0]; }
 function imgs(name) { return {
-  steps:   {str: "IBCBAAAAAYAAAAPgAAAH8AAAD/gAfAf8AP4D/gD+AfwA/gH5AP4B8gH+A+Qf/gfIf/4/kP/+fyD//n5AAAAAgP/+fwA="},
-  sunrise: {offset: -9, str: "GhCBAAAhAACIRAARIgBESIgIgEQBD8IED/wIx/+MC//0AP/8DH//jN//7Af/+AH//gN//7MP/8M="},
-  sunset:  {str: "JxCBAAAAgAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIEAAAAAAAAAEAAAAAIiAAAABAQAAACD4IAAAJ/yAAAAf/AAAAH/8EAAM//mAAAP/+A=="},
-  alarm0:  {str: "JCCBAABwAOAAHwAPgAfgAH4A/D/D8A+OBx8B84Ac+B7gAHeDyAABPDmAB9nDEcAEjAMEAIwAIIAQQAYQAgYAQcBAIAQAZ8IAQB4AIAQHEAIAQcCAIAYABAYAIAAgQAMAAQwAEAAIgAGB+BgADA8DAABgAGAAAwAMAAA+B8AABz/OAADgAHAAHAADgAOAABwAcAAA4A=="},
-  alarm1:  {str: "EBCBAAGAY8ZH4s/zn/mf+R/4H/gf+B/4H/g//H/+AAADwAGA"},
-  timer0:  {str: "JCCBAAVVVVYAaqqqoAKAABQAKAABQAKAABQAFAACgAFAACgAFAACgACgAFAACgAFAABQAKAAAoAUAAAUBoAAAKHQAAAFGgAAACtAAAACtAAAAFCgAAAKJQAAAUAoAAAoIUAABQAKAACg8FAACj/FAAFP/ygAF//+gAF//+gAL///QAL///QAL///QAVVVVYAaqqqoA=="},
-  timer1:  {str: "EBCBAABAAOAAsAGYAQwBBgF/H/5w+MGAf4A/gB+ADwAHAAIA"},
-  timeto:  {str: "EBCBAAfgDDIBhgBsABgAMABhAMEBgQABAAN4AkAGUAxcOAfg"},
-  timeat:  {str: "EBCBAAfgHLgxDGEGQQLBE4EhwUGBg4ABwANAAmAGMAwdOAfg"}
+  steps:      {str: "IBCBAAAAAYAAAAPgAAAH8AAAD/gAfAf8AP4D/gD+AfwA/gH5AP4B8gH+A+Qf/gfIf/4/kP/+fyD//n5AAAAAgP/+fwA="},
+  sunrise:    {offset: -9, str: "GhCBAAAhAACIRAARIgBESIgIgEQBD8IED/wIx/+MC//0AP/8DH//jN//7Af/+AH//gN//7MP/8M="},
+  sunset:     {str: "JxCBAAAAgAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIEAAAAAAAAAEAAAAAIiAAAABAQAAACD4IAAAJ/yAAAAf/AAAAH/8EAAM//mAAAP/+A=="},
+  alarm0:     {str: "JCCBAABwAOAAHwAPgAfgAH4A/D/D8A+OBx8B84Ac+B7gAHeDyAABPDmAB9nDEcAEjAMEAIwAIIAQQAYQAgYAQcBAIAQAZ8IAQB4AIAQHEAIAQcCAIAYABAYAIAAgQAMAAQwAEAAIgAGB+BgADA8DAABgAGAAAwAMAAA+B8AABz/OAADgAHAAHAADgAOAABwAcAAA4A=="},
+  alarm1:     {str: "EBCBAAGAY8ZH4s/zn/mf+R/4H/gf+B/4H/g//H/+AAADwAGA"},
+  timer0:     {str: "JCCBAAVVVVYAaqqqoAKAABQAKAABQAKAABQAFAACgAFAACgAFAACgACgAFAACgAFAABQAKAAAoAUAAAUBoAAAKHQAAAFGgAAACtAAAACtAAAAFCgAAAKJQAAAUAoAAAoIUAABQAKAACg8FAACj/FAAFP/ygAF//+gAF//+gAL///QAL///QAL///QAVVVVYAaqqqoA=="},
+  timer1:     {str: "EBCBAABAAOAAsAGYAQwBBgF/H/5w+MGAf4A/gB+ADwAHAAIA"},
+  calendar1:  {str: "EBCBAAGAY8ZH4s/zn/mf+R/4H/gf+B/4H/g//H/+AAADwAGA"},
+  timeto:     {str: "EBCBAAfgDDIBhgBsABgAMABhAMEBgQABAAN4AkAGUAxcOAfg"},
+  timeat:     {str: "EBCBAAfgHLgxDGEGQQLBE4EhwUGBg4ABwANAAmAGMAwdOAfg"},
+  title:      {str: "EBCBAAGAY8ZH4s/zn/mf+R/4H/gf+B/4H/g//H/+AAADwAGA"}
 }[name]; }
 function updateOn(field) {
   var ret = "x";
-  [ ["d", "sundown,sched"],
+  [ ["d", "sundown,sched,android.calendar.json"],
     ["h", ""],
-    ["m", "steps"]
+    ["m", "steps,alarm,timer,calendar"]
   ].some(a => {
     if (a[1].includes(field || 0)) ret = a[0];
   });
@@ -44,13 +47,15 @@ function updateOn(field) {
 
 /*** helper functions ***/
 function outerRect(r) {
-  return {x: r.x-1, y: r.y-1, w: r.w+2, h: r.h+2, x2: r.x2+1, y2: r.y2+1};
+  return {x: r.x-1, y: r.y-1, x2: r.x2+1, y2: r.y2+1};
 }
 function centerSpot(r) {
-  return {x: r.x + r.w / 2, y: r.y + r.h / 2};
+  return {x: (r.x + r.x2) / 2, y: (r.y + r.y2) / 2};
 }
 // define function to format ms as human-readable time
-function getReadableTime(ms) {
+function getReadableTime(ms, time) {
+  if (typeof ms !== "number") return ms;
+  if (time) ms = ms - Date().getTimezoneOffset() * 6E4;
   ms = TUdecodeTime(ms);
   return ms.h + ":" + ("0" + ms.m).substr(-2);
 }
@@ -58,6 +63,8 @@ function getReadableTime(ms) {
 /*** get functions ***/
 // define function to get a fields value and view object
 function getField(field, time) {
+  var noMod = "\\ 'o' /";
+  var mC;
   switch(field) {
     case "minute": {
       return {value: ("0" + time.getMinutes()).substr(-2)};
@@ -91,16 +98,21 @@ function getField(field, time) {
     }
     case "sunrise":
     case "sunset": { // time of sunrise/-set
+      mC = modCache.sundown;
       return {
-        value: modCache.sundown ? modCache.sundown[field] : "\\ 'o' /",
+        value: mC ? mC[field] : noMod,
         view: {type: "val_1stat_icon", img: field}
       };
     }
     case "alarm":
-    case "timer": { // upcomming alarms and timers
+    case "timer": { // upcoming alarms and timers
+      mC = modCache.getSched;
+    }
+    case "calendar": { // upcoming calendar events
+      mC = mC || modCache.getCalEve;
       return {
-        value: modCache.getSched ? modCache.getSched(field, time) : "\\ 'o' /",
-        view: {type: "val_1-2dyn_icon", img1: field, img2: "time"}
+        value: mC ? mC(field, time) : noMod,
+        view: {type: "val_dyn_icon", img1: field, img2: clock.sel[field]}
       };
     }
     default: return {};
@@ -135,19 +147,24 @@ function drawMinute(time) {
 }
 function drawValue(field, time) {
   var tile = clock.tiles.indexOf(field);
-  var rect = tileRect(tile);
+  var rect = tileRect[tile].clone();
+  // remove unsupported field
+  delete rect.f;
   var fObj = Object.assign(
     {rect: rect, center: centerSpot(rect)},
-    selection[tile],
+    selection[field],
     getField(field, time)
   );
-  g.reset().clearRect(rect);
+  g.reset().clearRect(outerRect(rect));
   drawView(fObj);
 }
 function drawView(fObj) {
   if (fObj.view.type.startsWith("val_") && fObj.value !== undefined) {
-    g.reset().setFont12x20().setFontAlign().drawString(
-      fObj.value, fObj.center.x + 1.4, fObj.rect.y2 - 6
+    var val = fObj.value || "";
+    var font = val.length > 5 ? "6x8" : "12x20";
+    if (val.length > 9) val = val.substr(0, 9) + "\n" + val.substr(9, 9);
+    g.reset().setFont(font).setFontAlign().drawString(
+      val, fObj.center.x + 1.4, fObj.rect.y2 - 6
     );
   }
   if (fObj.view.type === "val_1stat_icon") {
@@ -157,10 +174,10 @@ function drawView(fObj) {
       image: atob(img.str), center: true
     }]);
   }
-  if (fObj.view.type === "val_1-2dyn_icon") {
+  if (fObj.view.type === "val_dyn_icon") {
     var img1 = imgs(fObj.view.img1 + (fObj.value ? "1" : "0"));
     if (fObj.value) {
-      var img2 = imgs(fObj.view.img2 + (fObj.opt ? "to" : "at"));
+      var img2 = imgs(fObj.view.img2[fObj.opt]);
       var xGap = 12;
       if (fObj.pages > 1) {
         xGap = 18;
@@ -197,70 +214,105 @@ function updateMod(module, time) {
   var tmp;
   if (module === "sundown") {
     // load sundown
-    var sun = require("sundown")(time);
+    var sun = require(module)(time);
     tmp = {
       sunrise: sun ? sun.sunrise.time || "-" : "?",
       sunset: sun ? sun.sunset.time || "-" : "?"
     };
   } else if (module === "sched") {
-    // set function to return the selected alarm value if it doesn't exist
+    // set function to return a selected time value if it doesn't exist
     if (!modCache.getSched) modCache.getSched = function(field, time) {
-      // get selection for tile of this field
-      var sel = selection[clock.tiles.indexOf(field)];
+      // get selection for this field
+      var sel = selection[field];
       // get the selected alarm
-      var alarm = modCache.sched[field][sel.page];
-      // check for alarm entries
-      if (alarm) {
-        // calculate selected value
-        alarm = sel.opt ?
-          // as time to value
-          alarm.tTo + alarm.calcAt - time.valueOf() :
-          // as time at value or none
-          alarm.t;
-        // return as human readable value
-        return getReadableTime(alarm);
-      } else {
-        return "";
+      var alarm = modCache[module][field][sel.page];
+      // return on missing alarm
+      if (!alarm) return "";
+      // calculate new time to value
+      var tTo = alarm.t - time.valueOf();
+      // return and reload module if alarm is in the past
+      if (tTo < 0) return setTimeout(updateMod, 0, module, time);
+      // return selected value as human readable
+      switch(clock.sel[field][sel.opt]) {
+        case "timeat": return getReadableTime(alarm.t, true);
+        case "timeto": return getReadableTime(tTo);
       }
     };
     // load sched
-    var sched = require("sched");
-    // read active alarms/timers
-    tmp = sched.getAlarms().filter(a => a.on).map(
-      function (a) { return {
+    var sched = require(module);
+    // read active alarms/timers and arrange in seperate arrays
+    tmp = {alarm: [], timer:[]};
+    sched.getAlarms().filter(a => a.on).map(a => {
+      var tTo = sched.getTimeToAlarm(a, time);
+      return {
         timer: a.timer,
-        t: a.t,
-        tTo: sched.getTimeToAlarm(a, time),
-        calcAt: time.valueOf()
-      }; }
-    ).filter(a => a.tTo).sort((a, b) => a.tTo - b.tTo);
-    // rearrange alarms and timers into seperate objects
-    tmp = {
-      alarm: tmp.filter(a => !a.timer),
-      timer: tmp.filter(a => a.timer)
-    };
-    // setup alarms and timers
+        t: tTo ? time.valueOf() + tTo : 0
+      };
+    }).filter(a => a.t).sort((a, b) => a.t - b.t).forEach(
+      a => tmp[a.timer ? "timer" : "alarm"].push(a));
+    // setup alarm and timer fields
     Object.keys(tmp).forEach(field => {
       // get tile of this field
       var tile = clock.tiles.indexOf(field);
       // set numer of pages for the selection 
-      selection[tile].pages = tmp[field].length;
+      selection[field].pages = tmp[field].length;
       // check if pages available
-      if (selection[tile].pages) {
-        // add touch area
-        var rect = tileRect(tile);
-        touchAreas.push({
-          x: rect.x, y: rect.y,
-          x2: rect.x2, y2: rect.y2,
-          tile: tile
-        });
+      if (selection[field].pages) {
+        // activate tile area
+        tileRect[tile].f = field;
       } else {
         // remove trigger
         triggerHandler.remove(updateOn(field), field);
-        // filter this tile from the touch areas
-        touchAreas = touchAreas.filter(a => a.tile !== tile);
+        // remove field from tile area
+        delete tileRect[tile].f;
       }
     });
+  } else if (module === "android.calendar.json") {
+    // set function to return the selected value if it doesn't exist
+    if (!modCache.getCalEve) modCache.getCalEve = function(field, time) {
+      // get selection for calendar
+      var sel = selection[field];
+      // get the selected calendar event
+      var event = modCache[module][sel.page];
+      // return on missing alarm
+      if (!event) return "";
+      // calculate new time to value
+      var tTo = event.t - time.valueOf();
+      // return and reload module if alarm is in the past
+      if (tTo < 0) return setTimeout(updateMod, 0, module, time);
+      // return selected value as human readable
+      switch(clock.sel[field][sel.opt]) {
+        case "title": return event.title;
+        case "timeat": return getReadableTime(event.t, true);
+        case "timeto": return getReadableTime(tTo);
+      }
+    };
+    // calculate now and until value in seconds as defined in settings
+    var now = Math.ceil(Date.now() / 1000);
+    var dur = clock.settings[module].upcoming * 3600;
+    // load filtered events
+    tmp = (require("Storage").readJSON(module, true) || []).filter(e =>
+        e.timestamp > now && e.timestamp < now + dur
+      ).sort((a, b) => a.timestamp - b.timestamp).map(e => ({
+        t: e.timestamp * 1000,
+        title: e.title.substr(0, 18).replace("\n", " ")
+      })) || [];
+    // setup calendar field
+    var field = "calendar";
+    // get tile of this field
+    var tile = clock.tiles.indexOf(field);
+    // set numer of pages for the selection 
+    selection[field].pages = tmp.length;
+    // check if pages available
+    if (selection[field].pages) {
+      // activate tile area
+      tileRect[tile].f = field;
+    } else {
+      // remove trigger
+      triggerHandler.remove(updateOn(field), field);
+      // remove field from tile area
+      delete tileRect[tile].f;
+    }
   }
   // use cache and draw depending values if changed
   if (modCache[module] !== tmp) {
@@ -297,12 +349,10 @@ function registerTriggers() {
     triggerHandler.add(updateOn(field), field,
       time => drawValue(field, time));
     if (clock.sel[field]) {
-      // get tile of this field
-      var tile = clock.tiles.indexOf(field);
       // set selection object
-      selection[tile] = {
-        opt: clock.sel[field][0],
-        opts: clock.sel[field][1],
+      selection[field] = {
+        opt: 0,
+        opts: clock.sel[field].length,
         page: 0,
         pages: 0
       };
@@ -330,23 +380,23 @@ function registerTriggers() {
 }
 
 /*** hid functions ***/
-function touchHandler(tile) {
-  var sel = selection[tile];
+function touchHandler(field) {
+  var sel = selection[field];
   if (sel) {
     if (++sel.opt >= sel.opts) {
       sel.opt = 0;
       if (++sel.page >= sel.pages) sel.page = 0;
     }
-    drawValue(clock.tiles[tile], new Date(( 0 | Date.now() / 6E4 ) * 6E4));
+    drawValue(field, new Date(( 0 | Date.now() / 6E4 ) * 6E4));
   }
 }
 function touchListener(b, c) {
-  // check if inside any touch area
-  var tile = (touchAreas.filter(a => c.x >= a.x && c.x <= a.x2 && c.y >= a.y && c.y <= a.y2)[0] || {}).tile;
-  // give feedback und execute handler if found 
-  if (tile) {
+  // check if inside any active tile
+  var field = (tileRect.filter(a => a.f && c.x >= a.x && c.x <= a.x2 && c.y >= a.y && c.y <= a.y2)[0] || {}).f;
+  // give feedback und execute handler if found
+  if (field) {
     Bangle.buzz(25);
-    touchHandler(tile);
+    touchHandler(field);
   }
 }
 function setupHID() {

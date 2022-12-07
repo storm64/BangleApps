@@ -4,17 +4,22 @@
   "woy": "",
   "modules": {
     "sundown": ["sunrise", "sunset"],
-    "sched": ["alarm", "timer"]
+    "sched": ["alarm", "timer"],
+    "android.calendar.json": ["calendar"]
   },
   "dateLine": [
     "date", "dow", "woy"
   ],
   "tiles": [
     "sunrise", "steps", "sunset",
-    "", "alarm", "timer"
+    "timer", "alarm", "calendar"
   ],
   "sel": {
-    "alarm": [0, 2],
-    "timer": [1, 2]
+    "alarm": ["timeat", "timeto"],
+    "timer": ["timeto", "timeat"],
+    "calendar": ["title", "timeat", "timeto"]
+  },
+  "settings": {
+    "android.calendar.json": {"upcoming": 24}
   }
 }
