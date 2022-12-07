@@ -29,6 +29,7 @@ function imgs(name) { return {
   alarm1:     {str: "EBCBAAGAY8ZH4s/zn/mf+R/4H/gf+B/4H/g//H/+AAADwAGA"},
   timer0:     {str: "JCCBAAVVVVYAaqqqoAKAABQAKAABQAKAABQAFAACgAFAACgAFAACgACgAFAACgAFAABQAKAAAoAUAAAUBoAAAKHQAAAFGgAAACtAAAACtAAAAFCgAAAKJQAAAUAoAAAoIUAABQAKAACg8FAACj/FAAFP/ygAF//+gAF//+gAL///QAL///QAL///QAVVVVYAaqqqoA=="},
   timer1:     {str: "EBCBAABAAOAAsAGYAQwBBgF/H/5w+MGAf4A/gB+ADwAHAAIA"},
+  calendar0:  {str: "JCCBAABwAOAAHwAPgAfgAH4A/D/D8A+OBx8B84Ac+B7gAHeDyAABPDmAB9nDEcAEjAMEAIwAIIAQQAYQAgYAQcBAIAQAZ8IAQB4AIAQHEAIAQcCAIAYABAYAIAAgQAMAAQwAEAAIgAGB+BgADA8DAABgAGAAAwAMAAA+B8AABz/OAADgAHAAHAADgAOAABwAcAAA4A=="},
   calendar1:  {str: "EBCBAAGAY8ZH4s/zn/mf+R/4H/gf+B/4H/g//H/+AAADwAGA"},
   timeto:     {str: "EBCBAAfgDDIBhgBsABgAMABhAMEBgQABAAN4AkAGUAxcOAfg"},
   timeat:     {str: "EBCBAAfgHLgxDGEGQQLBE4EhwUGBg4ABwANAAmAGMAwdOAfg"},
@@ -62,7 +63,9 @@ function getReadableTime(ms, time) {
 
 /*** get functions ***/
 // define function to get a fields value and view object
-function getField(field, time) {
+function getField(fObj) {
+  var field = fObj.f;
+  var time = fObj.t;
   var noMod = "\\ 'o' /";
   var mC;
   switch(field) {
@@ -111,8 +114,8 @@ function getField(field, time) {
     case "calendar": { // upcoming calendar events
       mC = mC || modCache.getCalEve;
       return {
-        value: mC ? mC(field, time) : noMod,
-        view: {type: "val_dyn_icon", img1: field, img2: clock.sel[field]}
+        value: mC ? mC(fObj) : noMod,
+        view: {type: "val_dyn_icon", img1: field, img2: clock.sel[field][fObj.opt]}
       };
     }
     default: return {};
@@ -127,7 +130,7 @@ function drawFrame() {
   g.drawRect(58, 98, 117, 176);
 }
 function drawDate(time) {
-  var values = clock.dateLine.map(s => getField(s, time).value);
+  var values = clock.dateLine.map(s => getField({f: s, t: time}).value);
   g.reset().clearRect(1, 27, 174, 41).setFont12x20();
   g.setFontAlign(-1).drawString(values[0], 1, 36);
   g.setFontAlign(1).drawString(values[2], 176, 36);
@@ -137,13 +140,13 @@ function drawDate(time) {
 }
 function drawHour(time) {
   g.reset().clearRect(2, 46, 99, 95).setFont("Vector:66").setFontAlign(1);
-  g.drawString(getField("hour", time).value, 100, 75);
+  g.drawString(getField({f: "hour", t: time}).value, 100, 75);
   if (clock.is12Hour) g.setFont6x15().setFontAlign().drawString(
-    getField("meridian", time).value, 88, 54);
+    getField({f: "meridian", t: time}).value, 88, 54);
 }
 function drawMinute(time) {
   g.reset().clearRect(100, 46, 173, 95).setFont("Vector:66").setFontAlign(1);
-  g.drawString(getField("minute", time).value, 182, 75);
+  g.drawString(getField({f: "minute", t: time}).value, 182, 75);
 }
 function drawValue(field, time) {
   var tile = clock.tiles.indexOf(field);
@@ -151,50 +154,50 @@ function drawValue(field, time) {
   // remove unsupported field
   delete rect.f;
   var fObj = Object.assign(
-    {rect: rect, center: centerSpot(rect)},
-    selection[field],
-    getField(field, time)
+    {f: field, t: time, r: rect, c: centerSpot(rect)},
+    selection[field]
   );
   g.reset().clearRect(outerRect(rect));
   drawView(fObj);
 }
 function drawView(fObj) {
+  Object.assign(fObj, getField(fObj));
   if (fObj.view.type.startsWith("val_") && fObj.value !== undefined) {
     var val = fObj.value || "";
     var font = val.length > 5 ? "6x8" : "12x20";
     if (val.length > 9) val = val.substr(0, 9) + "\n" + val.substr(9, 9);
     g.reset().setFont(font).setFontAlign().drawString(
-      val, fObj.center.x + 1.4, fObj.rect.y2 - 6
+      val, fObj.c.x + 1.4, fObj.r.y2 - 6
     );
   }
   if (fObj.view.type === "val_1stat_icon") {
     var img = imgs(fObj.view.img);
     g.drawImages([{
-      x: fObj.center.x + (img.offset || 0), y: fObj.rect.y + 9,
+      x: fObj.c.x + (img.offset || 0), y: fObj.r.y + 9,
       image: atob(img.str), center: true
     }]);
   }
   if (fObj.view.type === "val_dyn_icon") {
     var img1 = imgs(fObj.view.img1 + (fObj.value ? "1" : "0"));
     if (fObj.value) {
-      var img2 = imgs(fObj.view.img2[fObj.opt]);
+      var img2 = imgs(fObj.view.img2);
       var xGap = 12;
       if (fObj.pages > 1) {
         xGap = 18;
         g.reset().setFont("6x8").setFontAlign().drawString(
-          fObj.page + 1 + " \n " + fObj.pages, fObj.center.x + 0.5, fObj.rect.y + 9
-        ).drawLine(fObj.center.x - 5.5,  fObj.rect.y + 15, fObj.center.x + 4.5,  fObj.rect.y + 3);
+          fObj.page + 1 + " \n " + fObj.pages, fObj.c.x + 0.5, fObj.r.y + 9
+        ).drawLine(fObj.c.x - 5.5,  fObj.r.y + 15, fObj.c.x + 4.5,  fObj.r.y + 3);
       }
       g.drawImages([{
-        x: fObj.center.x - xGap + 0.5, y: fObj.rect.y + 9,
+        x: fObj.c.x - xGap + 0.5, y: fObj.r.y + 9,
         image: atob(img1.str), center: true
       }, {
-        x: fObj.center.x + xGap, y: fObj.rect.y + 9,
+        x: fObj.c.x + xGap, y: fObj.r.y + 9,
         image: atob(img2.str), center: true
       }]);
     } else {
       g.drawImages([{
-        x: fObj.center.x, y: fObj.center.y,
+        x: fObj.c.x, y: fObj.c.y,
         image: atob(img1.str), center: true
       }]);
     }
@@ -221,22 +224,20 @@ function updateMod(module, time) {
     };
   } else if (module === "sched") {
     // set function to return a selected time value if it doesn't exist
-    if (!modCache.getSched) modCache.getSched = function(field, time) {
-      // get selection for this field
-      var sel = selection[field];
+    if (!modCache.getSched) modCache.getSched = function(fObj) {
       // get the selected alarm
-      var alarm = modCache[module][field][sel.page];
+      var alarm = modCache[module][fObj.f][fObj.page];
       // return on missing alarm
       if (!alarm) return "";
       // calculate new time to value
-      var tTo = alarm.t - time.valueOf();
+      var tTo = alarm.t - fObj.t.valueOf();
       // return and reload module if alarm is in the past
-      if (tTo < 0) return setTimeout(updateMod, 0, module, time);
+      if (tTo < 0) return setTimeout(updateMod, 0, module, fObj.t);
       // return selected value as human readable
-      switch(clock.sel[field][sel.opt]) {
-        case "timeat": return getReadableTime(alarm.t, true);
-        case "timeto": return getReadableTime(tTo);
-      }
+      return getReadableTime.apply({
+        timeat: [alarm.t, true],
+        timeto: tTo,
+      }[clock.sel[fObj.f][fObj.opt]]);
     };
     // load sched
     var sched = require(module);
@@ -269,23 +270,21 @@ function updateMod(module, time) {
     });
   } else if (module === "android.calendar.json") {
     // set function to return the selected value if it doesn't exist
-    if (!modCache.getCalEve) modCache.getCalEve = function(field, time) {
-      // get selection for calendar
-      var sel = selection[field];
+    if (!modCache.getCalEve) modCache.getCalEve = function(fObj) {
       // get the selected calendar event
-      var event = modCache[module][sel.page];
+      var event = modCache[module][fObj.page];
       // return on missing alarm
       if (!event) return "";
       // calculate new time to value
-      var tTo = event.t - time.valueOf();
+      var tTo = event.t - fObj.t.valueOf();
       // return and reload module if alarm is in the past
-      if (tTo < 0) return setTimeout(updateMod, 0, module, time);
+      if (tTo < 0) return setTimeout(updateMod, 0, module, fObj.t);
       // return selected value as human readable
-      switch(clock.sel[field][sel.opt]) {
-        case "title": return event.title;
-        case "timeat": return getReadableTime(event.t, true);
-        case "timeto": return getReadableTime(tTo);
-      }
+      return getReadableTime.apply({
+        title: event.title,
+        timeat: [event.t, true],
+        timeto: tTo,
+      }[clock.sel[fObj.f][fObj.opt]]);
     };
     // calculate now and until value in seconds as defined in settings
     var now = Math.ceil(Date.now() / 1000);
