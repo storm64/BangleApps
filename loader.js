@@ -16,7 +16,7 @@ if (window.location.host=="banglejs.com") {
     'This is not the official Bangle.js App Loader - you can try the <a href="https://banglejs.com/apps/">Official Version</a> here.';
 }
 
-var RECOMMENDED_VERSION = "2v15";
+var RECOMMENDED_VERSION = "2v16";
 // could check http://www.espruino.com/json/BANGLEJS.json for this
 
 // We're only interested in Bangles
@@ -49,7 +49,7 @@ function onFoundDeviceInfo(deviceId, deviceVersion) {
   if (deviceId != "BANGLEJS" && deviceId != "BANGLEJS2") {
     showToast(`You're using ${deviceId}, not a Bangle.js. Did you want <a href="https://espruino.com/apps">espruino.com/apps</a> instead?` ,"warning", 20000);
   } else if (versionLess(deviceVersion, RECOMMENDED_VERSION)) {
-    showToast(`You're using an old Bangle.js firmware (${deviceVersion}) and ${RECOMMENDED_VERSION} is available (<a href="http://www.espruino.com/ChangeLog" target="_blank">see changes</a>). You can update ${fwExtraText}<a href="${fwURL}" target="_blank">with the instructions here</a>` ,"warning", 20000);
+    showToast(`You're using an old Bangle.js firmware (${deviceVersion}) and ${RECOMMENDED_VERSION} is available (<a href="https://www.espruino.com/ChangeLog" target="_blank">see changes</a>). You can update ${fwExtraText}<a href="${fwURL}" target="_blank">with the instructions here</a>` ,"warning", 20000);
   }
   // check against features shown?
   filterAppsForDevice(deviceId);
@@ -162,7 +162,7 @@ window.addEventListener('load', (event) => {
       <label class="form-switch">
         <input type="checkbox" id="usage_stats" ${SETTINGS.sendUsageStats?"checked":""}>
         <i class="form-icon"></i> Send favourite and installed apps to banglejs.com<br/>
-          <small>For 'Sort by Installed/Favourited' functionality</small>
+          <small>For 'Sort by Installed/Favourited' functionality (see <a href="http://www.espruino.com/Privacy">privacy policy</a>)</small>
       </label>
       <label class="form-switch">
         <input type="checkbox" id="remember_device">
@@ -206,7 +206,9 @@ window.addEventListener('load', (event) => {
   // Button to install all default apps in one go
   document.getElementById("reinstallall").addEventListener("click",event=>{
     var promise =  showPrompt("Reinstall","Really re-install all apps?").then(() => {
-      getInstalledApps().then(installedapps => {
+      Comms.reset().then(_ =>
+        getInstalledApps()
+      ).then(installedapps => {
         console.log(installedapps);
         var promise = Promise.resolve();
         installedapps.forEach(app => {
@@ -216,10 +218,12 @@ window.addEventListener('load', (event) => {
           app = appJSON.find(a => a.id==oldApp.id);
           if (!app)
             return console.log(`Ignoring ${oldApp.id} as not found`);
-          promise = promise.then(() => updateApp(app));
+          promise = promise.then(() => updateApp(app, {noReset:true, noFinish:true}));
         });
         return promise;
-      }).catch(err=>{
+      }).then( _ =>
+        Comms.showUploadFinished()
+      ).catch(err=>{
         Progress.hide({sticky:true});
         showToast("App re-install failed, "+err,"error");
       });

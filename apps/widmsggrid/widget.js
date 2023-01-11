@@ -6,7 +6,8 @@
     showRead: !!settings.showRead,
   };
   delete settings;
-  WIDGETS["msggrid"] = {
+  // widget name needs to be "messages": the library calls WIDGETS["messages'].hide()/show()
+  WIDGETS["messages"] = {
     area: "tl", width: 0,
     flash: s.flash,
     showRead: s.showRead,
@@ -24,7 +25,7 @@
         clearTimeout(w.t);
         delete w.t;
       }
-      if (!w.width) return;
+      if (!w.width || this.hidden) return;
       const b = w.flash && w.status === "new" && ((Date.now() / 1000) & 1), // Blink(= inverse colors) on this second?
         // show multiple icons in a grid, by scaling them down
         cols = Math.ceil(Math.sqrt(w.srcs.length - 0.1)); // cols===rows, -0.1 to work around rounding error
@@ -32,15 +33,17 @@
         .setClipRect(w.x, w.y, w.x + w.width - 1, w.y + 24); // guard against oversized icons
       let r = 0, c = 0; // row, column
       const offset = pos => Math.floor(pos / cols * 24); // pixel offset for position in row/column
+      let icons = require("messageicons");
+      let defaultCol = icons.getColor("alert", {settings:settings});
       w.srcs.forEach(src => {
-        const appColor = require("messages").getMessageImageCol(src, require("messages").getMessageImageCol("alert"));
-        let colors = [g.theme.bg, g.setColor(appColor).getColor()];
+        const appColor = icons.getColor(src, {settings:settings,default:defaultCol});
+        let colors = [g.theme.bg, appColor];
         if (b) {
           if (colors[1] == g.theme.fg) colors = colors.reverse();
           else colors[1] = g.theme.fg;
         }
         g.setColor(colors[1]).setBgColor(colors[0]);
-        g.drawImage(require("messages").getMessageImage(src, "alert"), w.x+offset(c), w.y+offset(r), { scale: 1 / cols });
+        g.drawImage(icons.getImage(src), w.x+offset(c), w.y+offset(r), { scale: 1 / cols });
         if (++c >= cols) {
           c = 0;
           r++;
@@ -55,9 +58,12 @@
           .drawString(w.total, w.x + w.width - 1, w.y + 24, w.total > 9);
       }
       if (w.flash && w.status === "new") w.t = setTimeout(w.draw, 1000); // schedule redraw while blinking
-    }, show: function () {
+    },
+    // show() and hide() are required by the "message" library!
+    show: function (m) {
+      delete w.hidden;
       w.width = 24;
-      w.srcs = require("messages").getMessages()
+      w.srcs = require("messages").getMessages(m)
         .filter(m => !['call', 'map', 'music'].includes(m.id))
         .filter(m => m.new || w.showRead)
         .map(m => m.src);
@@ -66,6 +72,7 @@
       Bangle.drawWidgets();
       Bangle.setLCDPower(1); // turns screen on
     }, hide: function () {
+      w.hidden = true;
       w.width = 0;
       w.srcs = [];
       w.total = 0;
@@ -80,13 +87,16 @@
       }
       // Bangle.js 2: open app when touching the widget
       else if (c.x < w.x || c.x > w.x + w.width || c.y < w.y || c.y > w.y + 24) return;
-      load("messages.app.js");
-    }, listener: function () {
-      w.status = require("messages").status();
-      if (w.status === "new" || (w.status === "old" && w.showRead)) w.show();
+      require("messages").openGUI();
+    }, listener: function (t,m) {
+      if (this.hidden) return;
+      w.status = require("messages").status(m);
+      if (w.status === "new" || (w.status === "old" && w.showRead)) w.show(m);
       else w.hide();
+      delete w.hidden; // always set by w.hide(), but we checked it wasn't there before
     }
   };
   delete s;
-  const w = WIDGETS["msggrid"];
+  const w = WIDGETS["messages"];
+  Bangle.on("message", w.listener);
 })();

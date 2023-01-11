@@ -136,7 +136,8 @@
            <button class="btn" id="removeall" data-tooltip="Delete everything from your Bangle, leaving it blank">Remove all Apps</button>
            <button class="btn" id="reinstallall" data-tooltip="Remove and re-install every app, leaving all other data intact">Reinstall apps</button>
            <button class="btn" id="installdefault">Install default apps</button>
-           <button class="btn" id="installfavourite" data-tooltip="Delete everything, install apps you've marked as favourites">Install favourite apps</button></p>
+           <button class="btn" id="installfavourite" data-tooltip="Delete everything, install apps you've marked as favourites">Install favourite apps</button>
+           <button class="btn" id="newGithubIssue" data-tooltip="Create a new issue on github">New issue on github</button></p>
         <p><button class="btn tooltip tooltip-right" id="downloadallapps" data-tooltip="Download all Bangle.js files to a ZIP file">Backup</button>
            <button class="btn tooltip tooltip-right" id="uploadallapps" data-tooltip="Restore Bangle.js from a ZIP file">Restore</button></p>
         <h3>Settings</h3>
@@ -144,6 +145,10 @@
           <label class="form-switch">
             <input type="checkbox" id="settings-pretokenise">
             <i class="form-icon"></i> Pretokenise apps before upload (smaller, faster apps)
+          </label>
+          <label class="form-switch">
+            <input type="checkbox" id="settings-minify">
+            <i class="form-icon"></i> Minify apps before upload (smaller, faster apps - BETA)
           </label>
           <label class="form-switch">
             <input type="checkbox" id="settings-settime">
@@ -181,10 +186,10 @@
       </div>
     </footer>
 
-    <script src="https://www.puck-js.com/puck.js"></script>
+    <script src="webtools/puck.js"></script>
+    <script src="webtools/heatshrink.js"></script>    
     <script src="core/lib/marked.min.js"></script>
     <script src="core/lib/espruinotools.js"></script>
-    <script src="core/lib/heatshrink.js"></script>
     <script src="core/js/utils.js"></script>
     <script src="loader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script> <!-- for backup.js -->
