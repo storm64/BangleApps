@@ -30,7 +30,7 @@
         // calculate week of year
         let yf = new Date(time.getFullYear(), 0, 1);
         let dpy = Math.ceil((time + 1 - yf) / 86400000);
-        let woy = (opt.woy || (/*LANG*/"Week").substr(0, 1)) + 
+        let woy = (opt.woy || (/*LANG*/"Week").substr(0, 1)) +
           (" " + Math.ceil((dpy + (yf.getDay() - 11) % 7 + 3) / 7)).slice(-2);
 
         // setup values according to settings
@@ -244,7 +244,7 @@
         tile.focus = false;
         tile.redraw();
         return true;
-      }; });
+      } });
       // add date line redraw on lock state change on fullscreen mode
       if (clock.fullscreen && clock.loadWidgets) drawChanged(new Date(), {d: true}, clock);
     },
