@@ -1,25 +1,10 @@
 {
-  "lineColor": 33808,
+  "fullscreen": false,
+  "frameColor": 33808,
+  "is12Hour": false,
   "leading0": true,
+  "loadWidgets": true,
   "woy": "",
-  "modules": {
-    "sundown": ["sunrise", "sunset"],
-    "sched": ["alarm", "timer"],
-    "android.calendar.json": ["calendar"]
-  },
-  "dateLine": [
-    "date", "dow", "woy"
-  ],
-  "tiles": [
-    "sunrise", "steps", "sunset",
-    "timer", "alarm", "calendar"
-  ],
-  "sel": {
-    "alarm": ["timeat", "timeto"],
-    "timer": ["timeto", "timeat"],
-    "calendar": ["title", "timeat", "timeto"]
-  },
-  "settings": {
-    "android.calendar.json": {"upcoming": 24}
-  }
+  "dateLine": ["date", "dow", "woy"],
+  "tiles": [{},{},{},{},{},{}]
 }

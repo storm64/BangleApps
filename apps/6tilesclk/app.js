@@ -1,423 +1,261 @@
-/*** link modules ***/
-var ClockFace = require("ClockFace");
-var Locale = require("locale");
-var TUdecodeTime = require("time_utils").decodeTime;
-var DUdows = require("date_utils").dows;
+{ // start clock
 
-/*** define global variables ***/
-var triggerHandler = {}, modCache = {}, selection = {}, touchAreas = [];
-var tileRect = [
-  {x: 1, y: 100, x2: 56, y2: 135},
-  {x: 60, y: 100, x2: 115, y2: 135},
-  {x: 119, y: 100, x2: 174, y2: 135},
-  {x: 1, y: 139, x2: 56, y2: 174},
-  {x: 60, y: 139, x2: 115, y2: 174},
-  {x: 119, y: 139, x2: 174, y2: 174}
-];
-var infoRect = [
-  {x: 1, y: 139, x2: 174, y2: 174},
-  {x: 1, y: 100, x2: 174, y2: 174}
-];
+  /*** draw functions ***/
+  // function to draw the clock frame
+  let drawFrame = function(opt) {
+    let fs = opt.fullscreen;
+    g.reset();
+    let color = typeof opt.frameColor === "number" ? opt.frameColor : g.theme[opt.frameColor];
+    if (color) g.setColor(color);
+    g.drawRect(-1, fs ? -1 : 25, 176, fs ? 25 : 43);
+    g.drawRect(-1, fs ? 84 : 98, 176, fs ? 130 : 137);
+    g.drawRect(58, fs ? 84 : 98, 117, 176);
+  };
+  // function to draw the clock values
+  let drawChanged = function(time, changed, opt) {
+    // set y positions depending on fullscreen
+    let fs = opt.fullscreen;
+    let dy = fs ? 15 : 36; // for date line
+    let y = fs ? 59 : 75;  // for hour and minute
 
-
-/*** storage functions ***/
-function imgs(name) { return {
-  steps:      {str: "IBCBAAAAAYAAAAPgAAAH8AAAD/gAfAf8AP4D/gD+AfwA/gH5AP4B8gH+A+Qf/gfIf/4/kP/+fyD//n5AAAAAgP/+fwA="},
-  sunrise:    {offset: -9, str: "GhCBAAAhAACIRAARIgBESIgIgEQBD8IED/wIx/+MC//0AP/8DH//jN//7Af/+AH//gN//7MP/8M="},
-  sunset:     {str: "JxCBAAAAgAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIEAAAAAAAAAEAAAAAIiAAAABAQAAACD4IAAAJ/yAAAAf/AAAAH/8EAAM//mAAAP/+A=="},
-  alarm0:     {str: "JCCBAABwAOAAHwAPgAfgAH4A/D/D8A+OBx8B84Ac+B7gAHeDyAABPDmAB9nDEcAEjAMEAIwAIIAQQAYQAgYAQcBAIAQAZ8IAQB4AIAQHEAIAQcCAIAYABAYAIAAgQAMAAQwAEAAIgAGB+BgADA8DAABgAGAAAwAMAAA+B8AABz/OAADgAHAAHAADgAOAABwAcAAA4A=="},
-  alarm1:     {str: "EBCBAAGAY8ZH4s/zn/mf+R/4H/gf+B/4H/g//H/+AAADwAGA"},
-  timer0:     {str: "JCCBAAVVVVYAaqqqoAKAABQAKAABQAKAABQAFAACgAFAACgAFAACgACgAFAACgAFAABQAKAAAoAUAAAUBoAAAKHQAAAFGgAAACtAAAACtAAAAFCgAAAKJQAAAUAoAAAoIUAABQAKAACg8FAACj/FAAFP/ygAF//+gAF//+gAL///QAL///QAL///QAVVVVYAaqqqoA=="},
-  timer1:     {str: "EBCBAABAAOAAsAGYAQwBBgF/H/5w+MGAf4A/gB+ADwAHAAIA"},
-  calendar0:  {str: "JCCBAABwAOAAHwAPgAfgAH4A/D/D8A+OBx8B84Ac+B7gAHeDyAABPDmAB9nDEcAEjAMEAIwAIIAQQAYQAgYAQcBAIAQAZ8IAQB4AIAQHEAIAQcCAIAYABAYAIAAgQAMAAQwAEAAIgAGB+BgADA8DAABgAGAAAwAMAAA+B8AABz/OAADgAHAAHAADgAOAABwAcAAA4A=="},
-  calendar1:  {str: "EBCBAAGAY8ZH4s/zn/mf+R/4H/gf+B/4H/g//H/+AAADwAGA"},
-  timeto:     {str: "EBCBAAfgDDIBhgBsABgAMABhAMEBgQABAAN4AkAGUAxcOAfg"},
-  timeat:     {str: "EBCBAAfgHLgxDGEGQQLBE4EhwUGBg4ABwANAAmAGMAwdOAfg"},
-  title:      {str: "EBCBAAGAY8ZH4s/zn/mf+R/4H/gf+B/4H/g//H/+AAADwAGA"}
-}[name]; }
-function updateOn(field) {
-  var ret = "x";
-  [ ["d", "sundown,sched,android.calendar.json"],
-    ["h", ""],
-    ["m", "steps,alarm,timer,calendar"]
-  ].some(a => {
-    if (a[1].includes(field || 0)) ret = a[0];
-  });
-  return ret;
-}
-
-/*** helper functions ***/
-function outerRect(r) {
-  return {x: r.x-1, y: r.y-1, x2: r.x2+1, y2: r.y2+1};
-}
-function centerSpot(r) {
-  return {x: (r.x + r.x2) / 2, y: (r.y + r.y2) / 2};
-}
-// define function to format ms as human-readable time
-function getReadableTime(ms, time) {
-  if (typeof ms !== "number") return ms;
-  if (time) ms = ms - Date().getTimezoneOffset() * 6E4;
-  ms = TUdecodeTime(ms);
-  return ms.h + ":" + ("0" + ms.m).substr(-2);
-}
-
-/*** get functions ***/
-// define function to get a fields value and view object
-function getField(fObj) {
-  var field = fObj.f;
-  var time = fObj.t;
-  var noMod = "\\ 'o' /";
-  var mC;
-  switch(field) {
-    case "minute": {
-      return {value: ("0" + time.getMinutes()).substr(-2)};
-    }
-    case "hour": {
-      return {value: ((clock.leading0 ? "0" : " ") + (clock.is12Hour ?
-        Locale.time(time).split(":")[0] : time.getHours()
-      )).substr(-2) + ":"};
-    }
-    case "meridian": {
-      return Locale.meridian(time);
-    }
-    case "date": { // short local date
-      return {value: Locale.date(time, 1)};
-    }
-    case "dow": { // first 2 letters of the day of the week
-      //return Locale.dow(time, 1).substr(0, 2);
-      return {value: DUdows(0, 1)[time.getDay()]};
-    }
-    case "woy": { // week of the year
-      var yf = new Date(time.getFullYear(), 0, 1);
-      var dpy = Math.ceil((time - yf) / 86400000);
-      var woy = (" " + Math.ceil((dpy + (yf.getDay() - 11) % 7 + 3) / 7)).slice(-2);
-      return {value: (clock.woy || (/*LANG*/"Week").substr(0, 1)) + woy};
-    }
-    case "steps": { // steps of the day
-      return {
-        value: Bangle.getHealthStatus("day").steps,
-        view: {type: "val_1stat_icon", img: "steps"}
-      };
-    }
-    case "sunrise":
-    case "sunset": { // time of sunrise/-set
-      mC = modCache.sundown;
-      return {
-        value: mC ? mC[field] : noMod,
-        view: {type: "val_1stat_icon", img: field}
-      };
-    }
-    case "alarm":
-    case "timer": { // upcoming alarms and timers
-      mC = modCache.getSched;
-    }
-    case "calendar": { // upcoming calendar events
-      mC = mC || modCache.getCalEve;
-      return {
-        value: mC ? mC(fObj) : noMod,
-        view: {type: "val_dyn_icon", img1: field, img2: clock.sel[field][fObj.opt]}
-      };
-    }
-    default: return {};
-  }
-}
-
-/*** draw functions ***/
-function drawFrame() {
-  g.reset().setColor(clock.lineColor);
-  g.drawRect(-1, 25, 176, 43);
-  g.drawRect(-1, 98, 176, 137);
-  g.drawRect(58, 98, 117, 176);
-}
-function drawDate(time) {
-  var values = clock.dateLine.map(s => getField({f: s, t: time}).value);
-  g.reset().clearRect(1, 27, 174, 41).setFont12x20();
-  g.setFontAlign(-1).drawString(values[0], 1, 36);
-  g.setFontAlign(1).drawString(values[2], 176, 36);
-  var v0x2 = 1 + g.stringWidth(values[0]);
-  var v2x1 = 176 - g.stringWidth(values[2]);
-  g.setFontAlign().drawString(values[1], (v0x2 + v2x1) / 2 + 1.4, 36);
-}
-function drawHour(time) {
-  g.reset().clearRect(2, 46, 99, 95).setFont("Vector:66").setFontAlign(1);
-  g.drawString(getField({f: "hour", t: time}).value, 100, 75);
-  if (clock.is12Hour) g.setFont6x15().setFontAlign().drawString(
-    getField({f: "meridian", t: time}).value, 88, 54);
-}
-function drawMinute(time) {
-  g.reset().clearRect(100, 46, 173, 95).setFont("Vector:66").setFontAlign(1);
-  g.drawString(getField({f: "minute", t: time}).value, 182, 75);
-}
-function drawValue(field, time) {
-  var tile = clock.tiles.indexOf(field);
-  var rect = tileRect[tile].clone();
-  // remove unsupported field
-  delete rect.f;
-  var fObj = Object.assign(
-    {f: field, t: time, r: rect, c: centerSpot(rect)},
-    selection[field]
-  );
-  g.reset().clearRect(outerRect(rect));
-  drawView(fObj);
-}
-function drawView(fObj) {
-  Object.assign(fObj, getField(fObj));
-  if (fObj.view.type.startsWith("val_") && fObj.value !== undefined) {
-    var val = fObj.value || "";
-    var font = val.length > 5 ? "6x8" : "12x20";
-    if (val.length > 9) val = val.substr(0, 9) + "\n" + val.substr(9, 9);
-    g.reset().setFont(font).setFontAlign().drawString(
-      val, fObj.c.x + 1.4, fObj.r.y2 - 6
-    );
-  }
-  if (fObj.view.type === "val_1stat_icon") {
-    var img = imgs(fObj.view.img);
-    g.drawImages([{
-      x: fObj.c.x + (img.offset || 0), y: fObj.r.y + 9,
-      image: atob(img.str), center: true
-    }]);
-  }
-  if (fObj.view.type === "val_dyn_icon") {
-    var img1 = imgs(fObj.view.img1 + (fObj.value ? "1" : "0"));
-    if (fObj.value) {
-      var img2 = imgs(fObj.view.img2);
-      var xGap = 12;
-      if (fObj.pages > 1) {
-        xGap = 18;
-        g.reset().setFont("6x8").setFontAlign().drawString(
-          fObj.page + 1 + " \n " + fObj.pages, fObj.c.x + 0.5, fObj.r.y + 9
-        ).drawLine(fObj.c.x - 5.5,  fObj.r.y + 15, fObj.c.x + 4.5,  fObj.r.y + 3);
-      }
-      g.drawImages([{
-        x: fObj.c.x - xGap + 0.5, y: fObj.r.y + 9,
-        image: atob(img1.str), center: true
-      }, {
-        x: fObj.c.x + xGap, y: fObj.r.y + 9,
-        image: atob(img2.str), center: true
-      }]);
-    } else {
-      g.drawImages([{
-        x: fObj.c.x, y: fObj.c.y,
-        image: atob(img1.str), center: true
-      }]);
-    }
-  }
-}
-function drawInfo(full, viewObj) {
-  var rect = infoRect(full);
-  var center = centerSpot(rect);
-  g.reset().clearRect(outerRect(rect));
-  g.setFont12x20().setFontAlign();
-  g.drawString("info " + (full ? "full" : "half"), center.x, center.y);
-}
-
-/*** module update function ***/
-function updateMod(module, time) {
-  // define temporary cache
-  var tmp;
-  if (module === "sundown") {
-    // load sundown
-    var sun = require(module)(time);
-    tmp = {
-      sunrise: sun ? sun.sunrise.time || "-" : "?",
-      sunset: sun ? sun.sunset.time || "-" : "?"
-    };
-  } else if (module === "sched") {
-    // set function to return a selected time value if it doesn't exist
-    if (!modCache.getSched) modCache.getSched = function(fObj) {
-      // get the selected alarm
-      var alarm = modCache[module][fObj.f][fObj.page];
-      // return on missing alarm
-      if (!alarm) return "";
-      // calculate new time to value
-      var tTo = alarm.t - fObj.t.valueOf();
-      // return and reload module if alarm is in the past
-      if (tTo < 0) return setTimeout(updateMod, 0, module, fObj.t);
-      // return selected value as human readable
-      return getReadableTime.apply({
-        timeat: [alarm.t, true],
-        timeto: tTo,
-      }[clock.sel[fObj.f][fObj.opt]]);
-    };
-    // load sched
-    var sched = require(module);
-    // read active alarms/timers and arrange in seperate arrays
-    tmp = {alarm: [], timer:[]};
-    sched.getAlarms().filter(a => a.on).map(a => {
-      var tTo = sched.getTimeToAlarm(a, time);
-      return {
-        timer: a.timer,
-        t: tTo ? time.valueOf() + tTo : 0
-      };
-    }).filter(a => a.t).sort((a, b) => a.t - b.t).forEach(
-      a => tmp[a.timer ? "timer" : "alarm"].push(a));
-    // setup alarm and timer fields
-    Object.keys(tmp).forEach(field => {
-      // get tile of this field
-      var tile = clock.tiles.indexOf(field);
-      // set numer of pages for the selection 
-      selection[field].pages = tmp[field].length;
-      // check if pages available
-      if (selection[field].pages) {
-        // activate tile area
-        tileRect[tile].f = field;
+    // draw date line on change
+    if (changed.d) {
+      // clear date line
+      g.reset().clearRect(0, fs ? 0 : 27, 175, fs ? 24 : 41).setFont12x20();
+      // check lock state on fullscreen
+      if (fs && !Bangle.isLocked()) {
+        // draw widgets
+        Bangle.drawWidgets();
       } else {
-        // remove trigger
-        triggerHandler.remove(updateOn(field), field);
-        // remove field from tile area
-        delete tileRect[tile].f;
+        // calculate week of year
+        let yf = new Date(time.getFullYear(), 0, 1);
+        let dpy = Math.ceil((time + 1 - yf) / 86400000);
+        let woy = (opt.woy || (/*LANG*/"Week").substr(0, 1)) + 
+          (" " + Math.ceil((dpy + (yf.getDay() - 11) % 7 + 3) / 7)).slice(-2);
+
+        // setup values according to settings
+        let values = opt.dateLine.map(field => ({
+          date: require("locale").date(time, 1),
+          dow: require("date_utils").dows(0, 1)[time.getDay()],
+          woy: woy
+        })[field]);
+
+        // set y position and draw values
+        g.setFontAlign(-1).drawString(values[0], 1, dy);
+        g.setFontAlign(1).drawString(values[2], 176, dy);
+        let v0x2 = 1 + g.stringWidth(values[0]);
+        let v2x1 = 176 - g.stringWidth(values[2]);
+        g.setFontAlign().drawString(values[1], (v0x2 + v2x1) / 2 + 1.4, dy);
+      }
+    }
+
+    // draw hours on change
+    if (changed.h) {
+      let hours = ((opt.leading0 ? "0" : " ") + (opt.is12Hour ?
+        (time.getHours()-1)%12+1 : time.getHours())).substr(-2) + ":";
+      g.reset().clearRect(2, y - 29, 99, y + 20).setFont("Vector:66").setFontAlign(1);
+      g.drawString(hours, 100, y);
+      if (opt.is12Hour) g.setFont6x15().setFontAlign().drawString(
+        time.getHours() < 12 ? "am" : "pm", 88, y - 21);
+    }
+
+    // draw minutes on change
+    if (changed.m) {
+      g.reset().clearRect(100, y - 29, 173, y + 20).setFont("Vector:66").setFontAlign(1);
+      g.drawString(("0" + time.getMinutes()).substr(-2), 182, y);
+    }
+  };
+  // function to draw each tile
+  let drawTile = function(itm, get, opt) {
+    // setup positions
+    let rect = opt.rect;
+    let center = (function(r) {
+      return {x: (r.x + r.x2) / 2, y: (r.y + r.y2) / 2};
+    })(rect);
+    let xGap = opt.fs ? 14 : 12;
+
+    // clear tile
+    g.reset().clearRect(rect);
+    // set highlight color if in focus
+    if (opt.focus && opt.hl) g.setColor(opt.hl);
+
+    // draw item text
+    let text = "" + (get.text || "");
+
+    let font = text.length > 5 || text.includes("\n") ? "6x8" : "12x20";
+    if (text.length > 9) text = text.substr(0, 9).includes("\n") ?
+      text.substr(0, text.indexOf("\n") + 9) :
+      text.substr(0, 9) + "\n" + text.substr(9, 9).replace("\n", " ");
+    g.setFont(font).setFontAlign().drawString(
+      text, center.x + 1.4, rect.y2 - 7
+    );
+
+    // draw card count on multiple items
+    if ((opt.nBs || [])[opt.menuA] > 1) {
+      xGap += 4;
+      g.setFont("6x8").drawString(
+        opt.menuB + 1 + " \n " + opt.nBs[opt.menuA], center.x + 0.5, rect.y + 10
+      ).drawLine(center.x - 5.5,  rect.y + 16, center.x + 4.5,  rect.y + 4);
+    }
+
+    // setup and draw images if defined
+    let imgY = rect.y + (opt.fs ? 14 : 10);
+    let imgScale = opt.fs ? 1 : 2/3;
+    var images = [];
+    if (itm.img) images.push({
+      x: center.x - xGap + 0.4,
+      y: imgY,
+      image: itm.img,
+      scale: imgScale,
+      center: true
+    });
+    if (get.img) images.push({
+      x: center.x + xGap,
+      y: imgY,
+      image: get.img,
+      scale: imgScale,
+      center: true
+    });
+    g.drawImages(images);
+  };
+
+  /*** clock_info initialisation ***/
+  let initClkInfo = function(opt) {
+    // load clock_info data
+    let clkInfos = require("clock_info").load();
+    // insert menuA image into each item
+    clkInfos.forEach(mA => {
+      mA.items.map(mB => { mB.img = mA.img; return mB; });
+    });
+    // define tile/info rectangles
+    let y = opt.fullscreen ? [85, 129, 131, 175] : [99, 136, 138, 175];
+    let tileRect = [
+      {x: 0, y: y[0], x2: 57, y2: y[1]},
+      {x: 59, y: y[0], x2: 116, y2: y[1]},
+      {x: 118, y: y[0], x2: 175, y2: y[1]},
+      {x: 0, y: y[2], x2: 57, y2: y[3]},
+      {x: 59, y: y[2], x2: 116, y2: y[3]},
+      {x: 118, y: y[2], x2: 175, y2: y[3]}
+    ];
+    let infoRect = [
+      {x: 0, y: y[2], x2: 175, y2: y[3]},
+      {x: 0, y: y[0], x2: 175, y2: y[3]}
+    ];
+    // setup clock_info items
+    global["6tclk"].tileItems = tileRect.map(function(rect, index) {
+      // get tile settings
+      let myOpt = opt.tiles[index];
+      // make a copy of clockinfo data for each item
+      let itemInfos = clkInfos.slice();
+      // filter menuA items if defined
+      if (myOpt.menuA) itemInfos = itemInfos.filter(mA => myOpt.menuA.includes(mA.name));
+      // filter menuB items if defined
+      if (myOpt.menuB) itemInfos = itemInfos.map(menuA => {
+        let mA = menuA.clone();
+        mA.items = mA.items.filter(mB => myOpt.menuB.includes(mB.name));
+        return mA;
+      });
+      return itemInfos;
+    });
+    // setup clock_info menus
+    global["6tclk"].tileMenus = tileRect.map(function(rect, index) {
+      // reference tileItems
+      let tileItem = global["6tclk"].tileItems[index];
+      // check if there is no entry
+      if (tileItem.length <= 0 || tileItem[0].items.length <= 0) {
+        // draw empty tile
+        setTimeout(drawTile, 0, {
+          // set menuA image if available
+          img: tileItem[0] ? tileItem[0].img : undefined
+        }, {
+          // set placeholder
+          text: tileItem[0] ? "none" : "\\\'o\'/"
+        }, {
+          // set options
+          rect: rect,
+          fs: opt.fullscreen
+        });
+        return {remove: () => {}};
+      } else if (tileItem.length > 1 || tileItem[0].items.length > 1) {
+        // calculate number of menuB items for each menuA item
+        let nBs = tileItem.map(mA => mA.items.length);
+        // setup interactive tile
+        return require("clock_info").addInteractive(tileItem, {
+          x: rect.x,
+          y: rect.y,
+          w: rect.x2 - rect.x,
+          h: rect.y2 - rect.y,
+          draw: drawTile,
+          hl: "#0ff",
+          rect: rect,
+          tileNo: index,
+          fs: opt.fullscreen,
+          nBs: nBs
+        });
+      } else {
+        // setup single element
+        tileItem = tileItem[0].items[0];
+        let menu = {
+          index: -1,
+          remove: () => tileItem.hide(),
+          redraw: () => drawTile(tileItem, tileItem.get(), {
+            rect: rect,
+            tileNo: index,
+            fs: opt.fullscreen
+          })
+        };
+        tileItem.on("redraw", menu.redraw);
+        tileItem.show();
+        tileItem.emit("redraw");
+        return menu;
       }
     });
-  } else if (module === "android.calendar.json") {
-    // set function to return the selected value if it doesn't exist
-    if (!modCache.getCalEve) modCache.getCalEve = function(fObj) {
-      // get the selected calendar event
-      var event = modCache[module][fObj.page];
-      // return on missing alarm
-      if (!event) return "";
-      // calculate new time to value
-      var tTo = event.t - fObj.t.valueOf();
-      // return and reload module if alarm is in the past
-      if (tTo < 0) return setTimeout(updateMod, 0, module, fObj.t);
-      // return selected value as human readable
-      return getReadableTime.apply({
-        title: event.title,
-        timeat: [event.t, true],
-        timeto: tTo,
-      }[clock.sel[fObj.f][fObj.opt]]);
-    };
-    // calculate now and until value in seconds as defined in settings
-    var now = Math.ceil(Date.now() / 1000);
-    var dur = clock.settings[module].upcoming * 3600;
-    // load filtered events
-    tmp = (require("Storage").readJSON(module, true) || []).filter(e =>
-        e.timestamp > now && e.timestamp < now + dur
-      ).sort((a, b) => a.timestamp - b.timestamp).map(e => ({
-        t: e.timestamp * 1000,
-        title: e.title.substr(0, 18).replace("\n", " ")
-      })) || [];
-    // setup calendar field
-    var field = "calendar";
-    // get tile of this field
-    var tile = clock.tiles.indexOf(field);
-    // set numer of pages for the selection 
-    selection[field].pages = tmp.length;
-    // check if pages available
-    if (selection[field].pages) {
-      // activate tile area
-      tileRect[tile].f = field;
-    } else {
-      // remove trigger
-      triggerHandler.remove(updateOn(field), field);
-      // remove field from tile area
-      delete tileRect[tile].f;
-    }
-  }
-  // use cache and draw depending values if changed
-  if (modCache[module] !== tmp) {
-    modCache[module] = tmp;
-    clock.modules[module].forEach(field => drawValue(field, time));
-  }
-}
-
-/*** register activated tiles ***/
-function registerTriggers() {
-  // setup handler for triggers
-  triggerHandler = {
-    add: function(c, field, fn) {
-      if ("odhm".includes(c)) this[c][field] = fn;
-    },
-    remove: function(c, field) {
-      if ("odhm".includes(c)) return delete this[c][field];
-    },
-    trigger: function(c, time) {
-      Object.keys(this[c]).forEach(field => this[c][field](time));
-    },
-    onChanged: function(time, changed) {
-      Object.keys(changed).forEach(c => {
-        if (changed[c]) this.trigger(c, time);
-      });
-    },
-    o: {}, // once
-    d: {date: time => drawDate(time)},
-    h: {hour: time => drawHour(time)},
-    m: {minute: time => drawMinute(time)}
   };
-  // register trigger and default selection for all active fields
-  clock.tiles.forEach(field => {
-    triggerHandler.add(updateOn(field), field,
-      time => drawValue(field, time));
-    if (clock.sel[field]) {
-      // set selection object
-      selection[field] = {
-        opt: 0,
-        opts: clock.sel[field].length,
-        page: 0,
-        pages: 0
-      };
-    }
-  });
-  // look for needed modules
-  Object.keys(clock.modules).forEach(module => {
-    // check if module is in use
-    if (clock.modules[module].some(field => clock.tiles.includes(field))) {
-      // check if module is installed
-      if (require("Storage").read(module) !== undefined) {
-        // register trigger for the module
-        triggerHandler.add(updateOn(module), module,
-          time => updateMod(module, time));
-      } else {
-        clock.modules[module].forEach(field => {
-          // remove possible field triggers
-          triggerHandler.remove(updateOn(field), field);
-          // register trigger to be triggered just once
-          triggerHandler.add("o", field, time => drawValue(field, time));
-        });
-      }
-    }
-  });
-}
 
-/*** hid functions ***/
-function touchHandler(field) {
-  var sel = selection[field];
-  if (sel) {
-    if (++sel.opt >= sel.opts) {
-      sel.opt = 0;
-      if (++sel.page >= sel.pages) sel.page = 0;
-    }
-    drawValue(field, new Date(( 0 | Date.now() / 6E4 ) * 6E4));
-  }
-}
-function touchListener(b, c) {
-  // check if inside any active tile
-  var field = (tileRect.filter(a => a.f && c.x >= a.x && c.x <= a.x2 && c.y >= a.y && c.y <= a.y2)[0] || {}).f;
-  // give feedback und execute handler if found
-  if (field) {
-    Bangle.buzz(25);
-    touchHandler(field);
-  }
-}
-function setupHID() {
-  // setup user interface
-  Bangle.setUI({
-    mode: "custom",
-    clock: 1,
-    touch: touchListener,
-    btn: (n) => { if (n===1) Bangle.showLauncher(); },
-  });
-}
+  /*** setup global object ***/
+  global["6tclk"] = {
+    // clock function
+    clock: new (require("ClockFace"))({
+      init: function() {
+        initClkInfo(this);
+      },
+      draw: function(time, changed) {
+        drawFrame(this);
+        drawChanged(time, changed, this);
+      },
+      update: function(time, changed) {
+        drawChanged(time, changed, this);
+      },
+      remove: function() {
+        // remove tile menus
+        global["6tclk"].tileMenus.forEach(tile => tile.remove());
+        // remove lock listener
+        Bangle.removeListener("lock", global["6tclk"].onLock);
+        // remove clock
+        delete global["6tclk"];
+      },
+      settingsFile: "6tilesclk.settings.json"
+    }),
+    // onLock function
+    onLock: function(on) {
+      let clock = global["6tclk"].clock;
+      // clear selection of a tile on lock
+      if (on) global["6tclk"].tileMenus.some(tile => { if (tile.focus) {
+        tile.focus = false;
+        tile.redraw();
+        return true;
+      }; });
+      // add date line redraw on lock state change on fullscreen mode
+      if (clock.fullscreen && clock.loadWidgets) drawChanged(new Date(), {d: true}, clock);
+    },
+    // tiles array
+    tileMenus: []
+  };
 
-/*** clock function ***/
-var clock = new ClockFace({
-  init: registerTriggers,
-  draw: function(time, changed) {
-    drawFrame();
-    triggerHandler.onChanged(time, Object.assign({o: true}, changed));
-    setupHID();
-  },
-  update: triggerHandler.onChanged,
-  settingsFile: "6tilesclk.settings.json"
-});
+  /*** start clock and load settings ***/
+  global["6tclk"].clock.start();
 
-clock.start();
+  /*** add lock listener ***/
+  Bangle.on("lock", global["6tclk"].onLock);
+
+} // end of clock
