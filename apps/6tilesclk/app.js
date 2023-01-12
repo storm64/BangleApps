@@ -1,23 +1,31 @@
 { // start clock
   /*** image replacements ***/
   let replaceImg = function(name, size) {
-    // replace possibly changing numeration with # 
-    name = name.split("").map((char, index, strObj) => parseInt(char)+1 ? (parseInt(strObj[index - 1])+1 ? "" : "#") : char).join("");
-    return atob({
+    // simple replacements
+    let img = {
       "Bangle|16": "EBCBAAfAB8AHwAxgGTAxGCEIIQ4gjiBIMBgYMAxgB8AHwAfA",
       "Steps|16": "IBCBAAAAAYAAAAPgAAAH8AAAD/gAfAf8AP4D/gD+AfwA/gH5AP4B8gH+A+Qf/gfIf/4/kP/+fyD//n5AAAAAgP/+fwA=",
       "Sunrise|16": "GhCBAAAhAACIRAARIgBESIgIgEQBD8IED/wIx/+MC//0AP/8DH//jN//7Af/+AH//gN//7MP/8M=",
       "Sunset|16": "JxCBAAAAgAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIEAAAAAAAAAEAAAAAIiAAAABAQAAACD4IAAAJ/yAAAAf/AAAAH/8EAAM//mAAAP/+A==",
       "next Alarm|16": "EBCBAAGAY8ZH4s/zn/mf+R/4H/gf+B/4H/g//H/+AAADwAGA",
       "next Timer|16": "EBCBAABAAOAAsAGYAQwBBgF/H/5w+MGAf4A/gB+ADwAHAAIA",
-      "Alarm # at|16": "EBCBAAfgHLgxDGEGQQLBE4EhwUGBg4ABwANAAmAGMAwdOAfg",
-      "Timer # at|16": "EBCBAAfgHLgxDGEGQQLBE4EhwUGBg4ABwANAAmAGMAwdOAfg",
-      "Alarm # in|16": "EBCBAAfgDDIBhgBsABgAMABhAMEBgQABAAN4AkAGUAxcOAfg",
-      "Timer # in|16": "EBCBAAfgDDIBhgBsABgAMABhAMEBgQABAAN4AkAGUAxcOAfg",
-      "no Alarm|32": "ICCBAAHAA4AHwAPgH4AB+D8P8Pw+OBx8fOAHPnuAAd7yAABP5gAfZ8RwASMMEAIwCCAEEBhACBgQcBAIEAGfCBAHgAgQHEAIEHAgCBgAEBgIAAgQDAAEMAQAAiAGB+BgAwPAwAGAAYAAwAMAAPgfAAHP84ADgAHABwAA4A4AAHAcAAA4",
-      "no Timer|32": "ICCBABVVVVgaqqqoCgAAUAoAAFAKAABQBQAAoAUAAKAFAACgAoABQAKAAUABQAKAAKAFAABQGgAAKHQAABRoAAAK0AAACtAAABQoAAAolAAAUAoAAKCFAAFAAoACg8FAAo/xQAU//KAF//+gBf//oAv//9AL///QC///0BVVVVgaqqqo"
-    }[name + "|" + size] || "");
-  }
+    }[name + "|" + size];
+    if (img) return img;
+    // check complex replacements
+    if (size == 16) {
+      if (name.match(/^Alarm |^Timer /)) {
+        if (name.endsWith(" at")) return "EBCBAAfgHLgxDGEGQQLBE4EhwUGBg4ABwANAAmAGMAwdOAfg";
+        if (name.endsWith(" in")) return "EBCBAAfgDDIBhgBsABgAMABhAMEBgQABAAN4AkAGUAxcOAfg";
+      }
+    } else if (size >= 32) {
+      img = {
+        "no Alarm": "ICCBAAHAA4AHwAPgH4AB+D8P8Pw+OBx8fOAHPnuAAd7yAABP5gAfZ8RwASMMEAIwCCAEEBhACBgQcBAIEAGfCBAHgAgQHEAIEHAgCBgAEBgIAAgQDAAEMAQAAiAGB+BgAwPAwAGAAYAAwAMAAPgfAAHP84ADgAHABwAA4A4AAHAcAAA4",
+        "no Timer": "ICCBABVVVVgaqqqoCgAAUAoAAFAKAABQBQAAoAUAAKAFAACgAoABQAKAAUABQAKAAKAFAABQGgAAKHQAABRoAAAK0AAACtAAABQoAAAolAAAUAoAAKCFAAFAAoACg8FAAo/xQAU//KAF//+gBf//oAv//9AL///QC///0BVVVVgaqqqo"
+      }[name];
+      if (img) return img;
+    }
+    return "";
+  };
 
   /*** draw functions ***/
   // function to draw the clock frame
@@ -86,12 +94,13 @@
   };
   // function to draw each tile
   let drawTile = function(itm, get, opt) {
+    let fs = opt.fs;
     // setup positions
     let rect = opt.rect;
     let center = (function(r) {
       return {x: (r.x + r.x2) / 2 + 0.5, y: (r.y + r.y2) / 2};
     })(rect);
-    let xGap = opt.fs ? 13 : 11;
+    let xGap = 13;
 
     // clear tile
     g.reset().clearRect(rect);
@@ -109,24 +118,24 @@
     );
 
     // set y position for images and card count
-    let imgY = rect.y + (opt.fs ? 14 : 10);
+    let imgY = rect.y + (fs ? 14 : 10);
     // set size of the display area
-    let displSize = 24 + (text ? 0 : 16) - (opt.fs ? 0 : 8); 
+    let displSize = 24 + (text ? 0 : 16) - (fs ? 0 : 8);
     // get menuA image
     let imgA = itm.img;
     // try to get replacement menuB img
-    let imgB = replaceImg(itm.name, displSize) || get.img;
+    let imgB = atob(replaceImg(itm.name, displSize)) || get.img;
     // hide menuA image if no text is set or menuB image is in landscape format
     if (!text || imgB && g.imageMetrics(imgB).width > g.imageMetrics(imgB).height) imgA = 0;
 
     // draw card count on multiple items
     let countX;
     if ((opt.nBs || [])[opt.menuA] > 1) {
-      xGap += 6;
+      xGap += fs ? 2 : 4;
       // set x position depending on menuA image
       countX = imgA ? center.x : rect.x + 9;
       g.setFont("6x8").drawString(
-        opt.menuB + 1 + " \n " + opt.nBs[opt.menuA], countX, imgY
+        (opt.menuB + 1) + (fs ? "\n\n" : " \n ") + opt.nBs[opt.menuA], countX, imgY
       ).drawLine(countX - 4,  imgY + 3, countX + 3,  imgY - 4);
     }
 
@@ -142,7 +151,7 @@
     });
     // add menuB image if available
     if (imgB) images.push({
-      x: center.x + (imgA ? xGap : countX ? 9 : 0),
+      x: center.x + (imgA ? xGap + 1 : countX ? 9 : 0),
       y: text ? imgY : center.y + 1,
       image: imgB,
       scale: displSize / g.imageMetrics(imgB).height,
@@ -153,10 +162,11 @@
 
   /*** clock_info initialisation ***/
   let initClkInfo = function(opt) {
+    let fs = opt.fullscreen;
     // load clock_info data
     let clkInfos = require("clock_info").load();
     // define tile/info rectangles
-    let y = opt.fullscreen ? [85, 129, 131, 175] : [99, 136, 138, 175];
+    let y = fs ? [85, 129, 131, 175] : [99, 136, 138, 175];
     let tileRect = [
       {x: 0, y: y[0], x2: 57, y2: y[1]},
       {x: 59, y: y[0], x2: 116, y2: y[1]},
@@ -183,12 +193,14 @@
         mA.items = mA.items.filter(mB => myOpt.menuB.includes(mB.name));
         return mA;
       });
-      // handle images 
+      // handle menuA images 
       infoItems = infoItems.map(mA => {
-        // try to get replacement img
-        mA.img = replaceImg(mA.name, opt.fullscreen ? 24 : 16) || mA.img;
-        // insert menuA image into each item
-        mA.items.map(mB => { mB.img = mA.img; return mB; });
+        // check to replace menuA image and insert into each item
+        mA.items.map(mB => {
+          mB.img = atob(replaceImg(mA.name, fs ? 24 : 16)) || mA.img;
+          return mB;
+        });
+        // clear image from menuA
         delete mA.img;
         return mA;
       });
