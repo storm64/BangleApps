@@ -230,6 +230,7 @@
         let nBs = tileItem.map(mA => mA.items.length);
         // setup interactive tile
         return require("clock_info").addInteractive(tileItem, {
+          app: "6tilesclk",
           x: rect.x,
           y: rect.y,
           w: rect.x2 - rect.x,
