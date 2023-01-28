@@ -1,0 +1,10 @@
+{
+  "fullscreen": false,
+  "frameColor": 33808,
+  "is12Hour": false,
+  "leading0": true,
+  "loadWidgets": true,
+  "woy": "",
+  "dateLine": ["date", "dow", "woy"],
+  "tiles": [{},{},{},{},{},{}]
+}

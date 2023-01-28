@@ -1,0 +1,20 @@
+{
+  "id": "6tilesclk",
+  "name": "6 Tiles Clock",
+  "shortName": "6TilesClk",
+  "version": "0.02",
+  "description": "This clock displays date, day of week, week number, time and 6 tiles that show available information from the clock_info library.",
+  "icon": "app.png",
+  "type": "clock",
+  "tags": "clock",
+  "supports": ["BANGLEJS2"],
+  "readme": "README.md",
+  "storage": [
+    {"name": "6tilesclk.app.js", "url": "app.js"},
+    {"name": "6tilesclk.img", "url": "app-icon.js", "evaluate": true},
+    {"name": "6tilesclk.settings.js", "url": "settings.js"}
+  ],
+  "data": [
+    {"name": "6tilesclk.settings.json", "url": "settings.json"}
+  ]
+}
