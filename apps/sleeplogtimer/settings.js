@@ -64,7 +64,7 @@
     };
     var menu = E.showMenu(alarmMenu);
   }
-  
+
   // show filter menu
   function showFilterMenu() {
     // 0 = Sunday (default), 1 = Monday
@@ -77,17 +77,17 @@
         .join("")
         .toLowerCase();
     }
-  
+
     // show day of the week menu
     function showDowMenu(dow, cb) {
       // define dow group constants
-      const WORKDAYS = 62
+      const WORKDAYS = 62;
       const WEEKEND = firstDayOfWeek ? 192 : 65;
       const EVERY_DAY = firstDayOfWeek ? 254 : 127;
-  
+
       // check for a custom dow setup
       var isCustom = dow != WORKDAYS && dow != WEEKEND && dow != EVERY_DAY;
-  
+
       // define submenu for dow customizing
       function showCustomDaysMenu(dow, cb) {
         // setup menu
@@ -104,8 +104,8 @@
           };
         });
         var menu = E.showMenu(customDaysMenu);
-      };
-    
+      }
+
       var dowMenu = {
         "": { "title": /*LANG*/"alarm on" },
         "< Back": () => cb(dow),
