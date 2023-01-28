@@ -1,0 +1,21 @@
+{
+  "id":"sleeplogtimer",
+  "name":"Sleep Log Timer",
+  "shortName": "SleepLogTimer",
+  "version": "0.01",
+  "description": "Enhance your morning and time your wake up alarm. This app automatically creates an alarm at X hours after you fall asleep.",
+  "icon": "app.png",
+  "type": "widget",
+  "tags": "tool,widget",
+  "supports": ["BANGLEJS2"],
+  "dependencies": {
+    "scheduler": "type",
+    "sleeplog": "app"
+  },
+  "readme": "README.md",
+  "storage": [
+    {"name": "sleeplogtimer", "url": "lib.js"},
+    {"name": "sleeplogtimer.settings.js", "url": "settings.js"},
+    {"name": "sleeplogtimer.wid.js", "url": "widget.js"}
+  ]
+}
