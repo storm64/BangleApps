@@ -9,13 +9,16 @@ if ((require("Storage").readJSON("sleeplogtimer.settings.json", true) || {enable
     width: 0,
     //alarmAt: type Date of the alarm if triggered
     draw: function () {
+      // check width before drawing
+      if (!this.width) return;
       // draw zzz
       g.reset().setColor(settings.wid.color).drawImage(atob("BwoBD8SSSP4EEEDg"), this.x + 1, this.y);
       // draw duration to wake up alarm if enabled
       if (settings.wid.duration) {
         // directly include Font4x5Numeric
         g.setFontCustom(atob("CAZMA/H4PgvXoK1+DhPg7W4P1uCEPg/X4O1+AA=="), 46, atob("AgQEAgQEBAQEBAQE"), 5).setFontAlign(1, 1);
-        g.drawString(settings.after, this.x + this.width + 1, this.y + 23);
+        g.drawString(0|settings.after, this.x + this.width + 1, this.y + 17);
+        g.drawString(("" + 0|(settings.after%1 * 60)).padStart(2, "0"), this.x + this.width + 1, this.y + 23);
       }
     },
     reload: require("sleeplogtimer").widReload
@@ -23,4 +26,9 @@ if ((require("Storage").readJSON("sleeplogtimer.settings.json", true) || {enable
 
   // load widget
   WIDGETS.sleeplogtimer.reload();
+} else {
+  // delete a possible already created alarm
+  require("sched").setAlarm("sleeplogtimer", undefined);
+  // reload alarms
+  require("sched").reload();
 }

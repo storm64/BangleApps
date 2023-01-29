@@ -6,7 +6,7 @@ exports = {
       after: 6,
       fromType: 0, // first ? sleep: 0 = consec., 1 = deep, 2 = light
       alarm: {
-        msg: "Asleep since ",
+        msg: "",
         vibrate: "..",
         as: true,
         hidden: true
@@ -19,8 +19,8 @@ exports = {
         dow: 127
       },
       conditions: {
-        minTrueSleep: 0,
-        minConsecSleep: 0
+        minConsecSleep: 0,
+        minTrueSleep: 0
       },
       wid: {
         hide: false,
@@ -40,9 +40,13 @@ exports = {
 
     // set shortcut to filter
     let filter = settings.filter;
+    // 0 = Sunday (default), 1 = Monday
+    const firstDayOfWeek = (require("Storage").readJSON("setting.json", true) || {}).firstDayOfWeek || 0;
 
     // check if alarming on the correct weekday
     if (filter.dow & 1 << (new Date().getDay() +
+      // add one day if first day of the week is monday
+      ((require("Storage").readJSON("setting.json", true) || {}).firstDayOfWeek || 0) +
       // add one day if alarm will be on the next day
       (filter.toType ? filter.to - settings.after < 0 : filter.to + settings.after > 24)
     )%7) {
@@ -56,10 +60,11 @@ exports = {
           // abort if already triggered
           if (WIDGETS.sleeplogtimer.alarmAt) return;
           // execute trigger function if going into consec., deep or light sleep, depending on settings
-          if ((settings.fromType === 0 && data.consecutive === 2 && data.prevConsecutive <= 2) ||
-              (settings.fromType === 1 && data.status === 4 && data.prevStatus <= 4) ||
-              (settings.fromType === 2 && data.status === 3 && data.prevStatus <= 3))
-            require("sleeplogalarm").trigger();
+          if ((settings.fromType === 0 && data.consecutive === 2 && data.prevConsecutive < 2) ||
+              (settings.fromType === 1 && data.status === 4 && data.prevStatus < 4) ||
+              (settings.fromType === 2 && data.status >= 3 && data.prevStatus < 3))
+            // use timestamp depending on check for consecutive sleep 
+            require("sleeplogtimer").trigger(settings.fromType ? data.timestamp : (data.intoConsec || (data.timestamp - sleeplog.conf.minConsec)));
         }
       };
     } else {
@@ -71,41 +76,60 @@ exports = {
   },
 
   // trigger function
-  trigger: function() {
+  trigger: function(timestamp) {
     // read settings
     let settings = exports.getSettings();
 
     // convert timestamp into hours
-    let now = timestamp.getHours() + Math.round(timestamp.getMinutes() / 60);
+    let now = timestamp.getHours() + timestamp.getMinutes() / 60;
 
     // add alarm event at wake up time
     require("sched").setAlarm("sleeplogtimer", {
       appid: "sleeplog",
       on: true,
-      t: (now + settings.after)%24 * 36E5,
+      t: Math.round((now + settings.after)%24 * 36E5),
       msg: "Asleep since " + timestamp.getHours() + ":" + timestamp.getMinutes(),
-      vibrate: settings.alarm.vibrate,
-      as: settings.alarm.as,
       hidden: settings.alarm.hidden,
       rp: false,
-      del: true,
-      data: {msg: settings.alarm.msg, conditions: settings.conditions},
-      js: function() {
-        print("##### alarming from sleeplogtimer #####\nthis =\n" + this);
-        if (true) { // check for special conditions (this.data.conditions), e.g. minimal sleep duration
-          // edit this alarm to be handled by sched.js
-          this.js = undefined;
-          if (this.data.msg) this.msg = this.data.msg;
-          // retrigger sched.js
-          load("sched.js");
-        } else {
-          // delete this alarm
-          require("sched").setAlarm("sleeplogtimer", undefined);
-        }
+      vibrate: settings.alarm.vibrate,
+      as: settings.alarm.as,
+      "js": "require('sleeplogtimer').alarm()",
+      data: {
+        after: settings.after,
+        msg: settings.alarm.msg,
+        conditions: settings.conditions
       }
     });
 
-    // write changes
-    sched.setAlarms(allAlarms);
+    // reload alarms
+    require("sched").reload();
+  },
+
+  // alarm function
+  alarm: function() {
+    // load alarm
+    let alarm = require("sched").getAlarm("sleeplogtimer");
+    // load sleep stats if any special condition is set
+    let stats = Object.keys(alarm.data.conditions).some(key => alarm.data.conditions[key]) ?
+      require("sleeplog").getStats(new Date(), alarm.data.after * 36E5) : {};
+    // check for special conditions only if stats are loaded
+    if (!stats || stats.consecSleep >= alarm.data.conditions.minConsecSleep && 
+      stats.deepSleep + stats.lightSleep >= alarm.data.conditions.minTrueSleep) {
+      // set msg from settings if defined
+      if (alarm.data.msg) alarm.msg = alarm.data.msg;
+      // edit this alarm to be handled by sched.js once
+      delete alarm.data;
+      delete alarm.js;
+      alarm.del = true;
+      // write changes
+      require("sched").setAlarm("sleeplogtimer", alarm);
+      // retrigger sched.js
+      load("sched.js");
+    } else {
+      // clear this alarm if the special conditions did not match
+      require("sched").setAlarm("sleeplogtimer", undefined);
+      // reload alarms
+      require("sched").reload();
+    }
   }
 };

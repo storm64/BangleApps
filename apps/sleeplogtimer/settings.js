@@ -3,7 +3,7 @@
   var settings = require("sleeplogtimer").getSettings();
 
   // from types
-  var fromTypes = /*LANG*/"consec.,deep,light".split(",");
+  var fromTypes = /*LANG*/"consec.,deep,deep/light".split(",");
 
   // write change to storage
   function writeSetting() {
@@ -30,14 +30,14 @@
       "": {
         title: "Alarm Settings"
       },
-      /*LANG*/"< Back": () => showMain(3),
+      /*LANG*/"< Back": () => showMain(),
       /*LANG*/"msg": {
         value: settings.alarm.msg,
         format: v => !v ? "" : v.length > 6 ? v.substring(0, 6)+"..." : v,
         onchange: v => readInput(v, v => {
           settings.alarm.msg = v;
           writeSetting();
-          showMenu(4);
+          showAlarmMenu();
         })
       },
       /*LANG*/"vib pattern": require("buzz_menu").pattern(
@@ -90,6 +90,8 @@
 
       // define submenu for dow customizing
       function showCustomDaysMenu(dow, cb) {
+        // cache previous dow value
+        var prevDOW = dow;
         // setup menu
         var customDaysMenu = {
           "": { "title": /*LANG*/"Custom Days" },
@@ -103,6 +105,8 @@
               (dow &= ~(1 << (index + firstDayOfWeek)))
           };
         });
+        // add cancel option
+        customDaysMenu[/*LANG*/"Cancel"] = () => cb(prevDOW);
         var menu = E.showMenu(customDaysMenu);
       }
 
@@ -122,8 +126,8 @@
           onchange: () => cb(EVERY_DAY)
         },
         /*LANG*/"Custom": {
-          value: isCustom ? decodeDOW(dow) : require("date_utils"),
-          onchange: () => setTimeout(showCustomDaysMenu, 10, isCustom ? dow : EVERY_DAY, () => E.showMenu(dowMenu))
+          value: isCustom ? decodeDOW(dow) : false,
+          onchange: () => setTimeout(showCustomDaysMenu, 10, isCustom ? dow : EVERY_DAY, cb)
         }
       };
       var menu = E.showMenu(dowMenu);
@@ -134,7 +138,7 @@
       "": {
         title: "Filter Timer"
       },
-      /*LANG*/"< Back": () => showMain(4),
+      /*LANG*/"< Back": () => showMain(),
       /*LANG*/"from": {
         value: 0 + settings.filter.fromType,
         min: 0,
@@ -185,9 +189,10 @@
       },
       /*LANG*/"day of week": {
         value: decodeDOW(settings.filter.dow),
-        onchange: () => setTimeout(showDowMenu, 100, settings.filter.dow, (dow) => {
+        onchange: () => setTimeout(showDowMenu, 10, settings.filter.dow, dow => {
           settings.filter.dow = dow;
           writeSetting();
+          setTimeout(showFilterMenu, 10);
         })
       }
     };
@@ -201,20 +206,7 @@
       "": {
         title: "Conditions"
       },
-      /*LANG*/"< Back": () => showMain(5),
-      /*LANG*/"min true sleep": {
-        value: settings.conditions.minTrueSleep,
-        step: 10,
-        min: 0,
-        max: 720,
-        wrap: true,
-        noList: true,
-        format: v => (0|v/60) + ":" + ("" + (v%60)).padStart(2, "0"),
-        onchange: v => {
-          settings.conditions.minTrueSleep = v;
-          writeSetting();
-        }
-      },
+      /*LANG*/"< Back": () => showMain(),
       /*LANG*/"min consec. sleep": {
         value: settings.conditions.minConsecSleep,
         step: 10,
@@ -225,6 +217,19 @@
         format: v => (0|v/60) + ":" + ("" + (v%60)).padStart(2, "0"),
         onchange: v => {
           settings.conditions.minConsecSleep = v;
+          writeSetting();
+        }
+      },
+      /*LANG*/"min true sleep": {
+        value: settings.conditions.minTrueSleep,
+        step: 10,
+        min: 0,
+        max: 720,
+        wrap: true,
+        noList: true,
+        format: v => (0|v/60) + ":" + ("" + (v%60)).padStart(2, "0"),
+        onchange: v => {
+          settings.conditions.minTrueSleep = v;
           writeSetting();
         }
       }
@@ -243,7 +248,7 @@
       "": {
         title: "Widget Settings"
       },
-      /*LANG*/"< Back": () => showMain(6),
+      /*LANG*/"< Back": () => showMain(),
       /*LANG*/"hide": {
         value: settings.wid.hide,
         onchange: v => {
@@ -274,24 +279,25 @@
   }
 
   // show main menu
-  function showMain(selected) {
+  function showMain() {
+    // check for own timer
+    var ownTimer = !!require("sched").getAlarm("sleeplogtimer");
     // set menu
     var mainMenu = {
       "": {
-        title: "Sleep Log Timer",
-        selected: selected
+        title: "Sleep Log Timer"
       },
       /*LANG*/"< Back": () => back(),
       /*LANG*/"after": {
         value: settings.after * 60,
         step: 10,
-        min: 60,
+        min: 10,
         max: 780,
         wrap: true,
         noList: true,
         format: v => (0|v/60) + ":" + ("" + (v%60)).padStart(2, "0"),
         onchange: v => {
-          settings.earlier = v / 60;
+          settings.after = v / 60;
           writeSetting();
         }
       },
@@ -300,7 +306,7 @@
         min: 0,
         max: 2,
         wrap: true,
-        format: v => fromTypes[settings.fromType],
+        format: v => fromTypes[v],
         onchange: v => {
           settings.fromType = v;
           writeSetting();
@@ -315,6 +321,18 @@
         onchange: v => {
           settings.enabled = v;
           writeSetting();
+        }
+      },
+      /*LANG*/"Sleep Timer": {
+        value: ownTimer ? "clear" : "not set",
+        onchange: function(v) {
+          // delete a possible already created alarm
+          require("sched").setAlarm("sleeplogtimer", undefined);
+          // reload alarms
+          require("sched").reload();
+          // reset value
+          ownTimer = !!require("sched").getAlarm("sleeplogtimer");
+          this.value = ownTimer ? "clear" : "not set";
         }
       }
     };
