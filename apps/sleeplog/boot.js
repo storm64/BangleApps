@@ -235,6 +235,8 @@ if (sleeplog.conf.enabled) {
         // reset consecutive status
         data.consecutive = 0;
       }
+      // reset consecutive sleep if not worn
+      if (data.status === 1) this.consecutive = 1;
       // check if consecutive unknown
       if (!this.consecutive) {
         // check if long enough asleep or too long awake
