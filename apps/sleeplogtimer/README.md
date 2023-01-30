@@ -10,7 +10,7 @@ __to be changed__
 // load settings
 Bangle.loadWidgets();eval(require("Storage").read("sleeplogtimer.settings.js"))(load);Bangle.drawWidgets();Bangle.setLocked(false);
 // initiate trigger
-sleeplog.trigger.sleeplogtimer.fn({timestamp: new Date(), status: 3, prevStatus: 2});
+sleeplog.trigger.sleeplogtimer.fn({timestamp: new Date(), consecutive: 2, status: 4, prevStatus: 2});
 // reset alarm
 require("sched").setAlarm("sleeplogtimer", undefined);require("sched").reload();
 ```
@@ -23,31 +23,31 @@ _This widget does not detect sleep on its own and can not create alarms. It requ
 ### Settings
 ---
 
-  - __earlier__ | duration to trigger alarm earlier  
+  - __earlier__ | duration to trigger alarm earlier
     _10min_ / _20min_ / __30min__ / ... / _120min_
-  - __from Consec.__ | only trigger if comming from consecutive sleep  
+  - __from Consec.__ | only trigger if comming from consecutive sleep
     _on_ / __off__
-  - __vib pattern__ | vibration pattern for the earlier alarm  
+  - __vib pattern__ | vibration pattern for the earlier alarm
     __..__ / ...
-  - __msg__ | customized message for the earlier alarm  
+  - __msg__ | customized message for the earlier alarm
     __...__ / ...
-  - __msg as prefix__ | use the customized message as prefix to the original message or replace it comlpetely if disabled  
+  - __msg as prefix__ | use the customized message as prefix to the original message or replace it comlpetely if disabled
     __on__ / _off_
-  - __disable alarm__ | if enabled the original alarm will be disabled  
+  - __disable alarm__ | if enabled the original alarm will be disabled
     _on_ / __off__
-  - __auto snooze__ | auto snooze option for the earlier alarm  
+  - __auto snooze__ | auto snooze option for the earlier alarm
     __on__ / _off_
   - __Filter Alarm__ submenu
-    - __time from__ | exclude alarms before this time  
+    - __time from__ | exclude alarms before this time
       _0:00_ / _0:15_ / ... / __3:00__ / ... / _24:00_
-    - __time to__ | exclude alarms after this time  
+    - __time to__ | exclude alarms after this time
       _0:00_ / _0:15_ / ... / __12:00__ / ... / _24:00_
-    - __msg includes__ | include only alarms including this string in msg  
+    - __msg includes__ | include only alarms including this string in msg
       __""__ / ...
   - __Widget__ submenu
-    - __hide__ | completely hide the widget  
+    - __hide__ | completely hide the widget
       _on_ / __off__
-    - __show time__ | show the time of the targeting alarm  
+    - __show time__ | show the time of the targeting alarm
       __on__ / _off_
     - __color__ | color of the widget
       _red_ / __yellow__ / ... / _white_

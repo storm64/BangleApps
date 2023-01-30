@@ -3,7 +3,7 @@
   "name":"Sleep Log Timer",
   "shortName": "SleepLogTimer",
   "version": "0.01",
-  "description": "Enhance your morning and time your wake up alarm. This app automatically creates an alarm at X hours after you fall asleep.",
+  "description": "Enhance your morning and time your wake up alarm. This app automatically creates an alarm at configurable time after you fall asleep.",
   "icon": "app.png",
   "type": "widget",
   "tags": "tool,widget",

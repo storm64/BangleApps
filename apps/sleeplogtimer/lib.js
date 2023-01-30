@@ -52,19 +52,26 @@ exports = {
     )%7) {
       // set widget width if not hidden
       if (!this.hidden) this.width = 8;
-      // insert sleeplogalarm conditions and function
+      // insert sleeplogtimer conditions and function
       sleeplog.trigger.sleeplogtimer = {
+        onchange: true,
         from: (settings.filter.from - settings.filter.fromType * settings.after + 24)%24 * 36E5,
         to: (settings.filter.to - settings.filter.toType * settings.after + 24)%24 * 36E5 - 1,
+        // set condition depending on settings
+        checkCondition: [
+          data => data.consecutive === 2, // going into consecutive sleep
+          data => data.status === 4 && data.prevStatus < 4, // going into deep sleep
+          data => data.status >= 3 && data.prevStatus < 3 // going into deep/light sleep
+        ][settings.fromType],
+        // set timestamp depending on settings
+        getTimestamp: settings.fromType ? data => data.timestamp :
+          data => new Date(sleeplog.awakeSince || (data.timestamp - sleeplog.conf.minConsec)),
         fn: function (data) {
-          // abort if already triggered
-          if (WIDGETS.sleeplogtimer.alarmAt) return;
-          // execute trigger function if going into consec., deep or light sleep, depending on settings
-          if ((settings.fromType === 0 && data.consecutive === 2 && data.prevConsecutive < 2) ||
-              (settings.fromType === 1 && data.status === 4 && data.prevStatus < 4) ||
-              (settings.fromType === 2 && data.status >= 3 && data.prevStatus < 3))
-            // use timestamp depending on check for consecutive sleep 
-            require("sleeplogtimer").trigger(settings.fromType ? data.timestamp : (data.intoConsec || (data.timestamp - sleeplog.conf.minConsec)));
+          print("condition = ", this.checkCondition(data));
+          print("timestamp = ", this.getTimestamp(data));
+          // execute trigger function if not already triggered and the condition is met
+          if (!WIDGETS.sleeplogtimer.alarmAt && this.checkCondition(data))
+            require("sleeplogtimer").trigger(this.getTimestamp(data));
         }
       };
     } else {
@@ -113,7 +120,7 @@ exports = {
     let stats = Object.keys(alarm.data.conditions).some(key => alarm.data.conditions[key]) ?
       require("sleeplog").getStats(new Date(), alarm.data.after * 36E5) : {};
     // check for special conditions only if stats are loaded
-    if (!stats || stats.consecSleep >= alarm.data.conditions.minConsecSleep && 
+    if (!stats || stats.consecSleep >= alarm.data.conditions.minConsecSleep &&
       stats.deepSleep + stats.lightSleep >= alarm.data.conditions.minTrueSleep) {
       // set msg from settings if defined
       if (alarm.data.msg) alarm.msg = alarm.data.msg;
