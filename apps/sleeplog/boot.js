@@ -267,10 +267,13 @@ if (sleeplog.conf.enabled) {
         // go through all triggers
         triggers.forEach(key => {
           // read entry to key
-          var entry = this.trigger[key];
+          let entry = this.trigger[key];
+          // set from and to values to default if unset
+          let from = entry.from || 0;
+          let to = entry.to || 24 * 60 * 60 * 1000;
           // check if the event matches the entries requirements
           if (typeof entry.fn === "function" && (changed || !entry.onChange) &&
-            (entry.from || 0) <= time && (entry.to || 24 * 60 * 60 * 1000) >= time)
+            (from <= to ? from <= time && time <= to : time <= to || from <= time))
             // and call afterwards with status data
             setTimeout(entry.fn, 100, {
               timestamp: new Date(data.timestamp),
