@@ -10,3 +10,4 @@
 0.12: Improve README, option to add functions triggered by status changes or time periods, remove old log (<0.10) conversion
 0.13: Prevent to stay in consecutive sleep if not worn
 0.14: Correct calling triggers where last time is earlier then first time
+0.15: Add the trigger object itself as argument to the fn function to be able to store data or functions inside the trigger object. 
