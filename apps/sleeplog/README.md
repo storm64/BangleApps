@@ -184,11 +184,12 @@ if (typeof (global.sleeplog || {}).trigger === "object") {
     from: 0,           // 0 as default, in ms, first time fn will be called
     to: 24*60*60*1000, // 24h as default, in ms, last time fn will be called
       // reference time to from & to is rounded to full minutes
-    fn: function(data) { print(data); } // function to be executed
+    fn: function(data, thisTriggerEntry) { print(data); } // function to be executed
   };
 }
 ```
-The passed data object has the following properties:
+
+The passed __data__ object has the following properties:
 - timestamp: of the status change as date object,
     (should be around 10min. before "now", the actual call of the function)
 - status: value of the new status (0-4),
@@ -197,6 +198,9 @@ The passed data object has the following properties:
     (0 = unknown, 1 = no consecutive sleep, 2 = consecutive sleep)
 - prevStatus: if changed the value of the previous status (0-4) else undefined,
 - prevConsecutive: if changed the value of the previous status (0-2) else undefined
+
+
+If you want to use other variables or functions from the trigger object inside the trigger fn function, you will find them inside the __thisTriggerEntry__ object, as the this keyword is not working in this scenario.
 
 
 ---

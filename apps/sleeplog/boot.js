@@ -281,7 +281,7 @@ if (sleeplog.conf.enabled) {
               consecutive: data.consecutive,
               prevStatus: data.status === this.status ? undefined : this.status,
               prevConsecutive: data.consecutive === this.consecutive ? undefined : this.consecutive
-            });
+            }, (e => {delete e.fn; return e;})(entry));
         });
       }
 
