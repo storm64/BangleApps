@@ -200,7 +200,7 @@ The passed __data__ object has the following properties:
 - prevConsecutive: if changed the value of the previous status (0-2) else undefined
 
 
-If you want to use other variables or functions from the trigger object inside the trigger fn function, you will find them inside the __thisTriggerEntry__ object, as the this keyword is not working in this scenario.
+If you want to use other variables or functions from the trigger object inside the trigger fn function, you will find them inside the __thisTriggerEntry__ object, as the this keyword is not working in this scenario. The function itself (the fn property) is not passed inside the thisTriggerEntry object.
 
 
 ---
