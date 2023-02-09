@@ -56,7 +56,7 @@ exports = {
       sleeplog.trigger.sleeplogtimer = {
         onchange: true,
         from: (settings.filter.from - settings.filter.fromType * settings.after + 24)%24 * 36E5,
-        to: (settings.filter.to - settings.filter.toType * settings.after + 24)%24 * 36E5 - 1,
+        to: (settings.filter.to - settings.filter.toType * settings.after + 24)%24 * 36E5,
         // set condition depending on settings
         checkCondition: [
           data => data.consecutive === 2, // going into consecutive sleep
@@ -66,12 +66,12 @@ exports = {
         // set timestamp depending on settings
         getTimestamp: settings.fromType ? data => data.timestamp :
           data => new Date(sleeplog.awakeSince || (data.timestamp - sleeplog.conf.minConsec)),
-        fn: function (data) {
-          print("condition = ", this.checkCondition(data));
-          print("timestamp = ", this.getTimestamp(data));
+        fn: function (data, thisTigger) {
+          print("condition = ", thisTigger.checkCondition(data));
+          print("timestamp = ", thisTigger.getTimestamp(data));
           // execute trigger function if not already triggered and the condition is met
-          if (!WIDGETS.sleeplogtimer.alarmAt && this.checkCondition(data))
-            require("sleeplogtimer").trigger(this.getTimestamp(data));
+          if (!WIDGETS.sleeplogtimer.alarmAt && thisTigger.checkCondition(data))
+            require("sleeplogtimer").trigger(thisTigger.getTimestamp(data));
         }
       };
     } else {
