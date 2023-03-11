@@ -40,16 +40,15 @@ exports = {
 
     // set shortcut to filter
     let filter = settings.filter;
-    // 0 = Sunday (default), 1 = Monday
-    const firstDayOfWeek = (require("Storage").readJSON("setting.json", true) || {}).firstDayOfWeek || 0;
 
     // check if alarming on the correct weekday
-    if (filter.dow & 1 << (new Date().getDay() +
-      // add one day if first day of the week is monday
-      ((require("Storage").readJSON("setting.json", true) || {}).firstDayOfWeek || 0) +
+    if (filter.dow & 1 << ((
+      // get actual weekday
+      new Date().getDay() +
       // add one day if alarm will be on the next day
       (filter.toType ? filter.to - settings.after < 0 : filter.to + settings.after > 24)
-    )%7) {
+    // ensure correct range and add one day if first day of the week is monday
+    )%7 + ((require("Storage").readJSON("setting.json", true) || {}).firstDayOfWeek || 0))) {
       // set widget width if not hidden
       if (!this.hidden) this.width = 8;
       // insert sleeplogtimer conditions and function
@@ -67,8 +66,8 @@ exports = {
         getTimestamp: settings.fromType ? data => data.timestamp :
           data => new Date(sleeplog.awakeSince || (data.timestamp - sleeplog.conf.minConsec)),
         fn: function (data, thisTigger) {
-          print("condition = ", thisTigger.checkCondition(data));
-          print("timestamp = ", thisTigger.getTimestamp(data));
+          print("condition =", thisTigger.checkCondition(data));
+          print("timestamp =", thisTigger.getTimestamp(data));
           // execute trigger function if not already triggered and the condition is met
           if (!WIDGETS.sleeplogtimer.alarmAt && thisTigger.checkCondition(data))
             require("sleeplogtimer").trigger(thisTigger.getTimestamp(data));
