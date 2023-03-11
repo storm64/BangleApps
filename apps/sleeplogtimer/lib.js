@@ -66,8 +66,6 @@ exports = {
         getTimestamp: settings.fromType ? data => data.timestamp :
           data => new Date(sleeplog.awakeSince || (data.timestamp - sleeplog.conf.minConsec)),
         fn: function (data, thisTigger) {
-          print("condition =", thisTigger.checkCondition(data));
-          print("timestamp =", thisTigger.getTimestamp(data));
           // execute trigger function if not already triggered and the condition is met
           if (!WIDGETS.sleeplogtimer.alarmAt && thisTigger.checkCondition(data))
             require("sleeplogtimer").trigger(thisTigger.getTimestamp(data));
