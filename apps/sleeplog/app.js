@@ -97,7 +97,7 @@ function drawGraph(log, date, pos) {
   // draw x axis
   g.drawLine(0, y + 19, g.getWidth() - 1, y + 19);
   // draw x label
-  var stepWidth = g.getWidth() - 1 / 12;
+  var stepWidth = (g.getWidth() - 1) / 12;
   var startHour = date.getHours() + (pos ? 0 : 12);
   for (var x = 0; x < 12; x++) {
     g.fillRect(x * stepWidth, y + 20, x * stepWidth, y + 22);
@@ -257,10 +257,10 @@ function draw() {
   }
   // draw service and settings icon
   if (imgStr) g.drawImage(atob(imgStr), 2, 36);
-  g.reset().drawImage(atob("FBSBAAAeAAPgAHwAB4AA8AAPAwDwcA+PAP/wH/4D/8B/8A/gAfwAP4AH8AD+AA/AAPgABwAA"), g.getWidth() - 1 - 22, 36);
+  g.reset().drawImage(atob("FBSBAAAeAAPgAHwAB4AA8AAPAwDwcA+PAP/wH/4D/8B/8A/gAfwAP4AH8AD+AA/AAPgABwAA"), g.getWidth() - 23, 36);
 
   // show loading info with progresss bar
-  g.reset().drawRect(7, 117, g.getWidth() - 1 - 8, 157)
+  g.reset().drawRect(7, 117, g.getWidth() - 9, 157)
     .setFont("6x8").setFontAlign(0, 0)
     .drawString( /*LANG*/ "calculating data ...\nplease be patient :)", 87, 133)
     .drawRect(17, 145, 157, 151);
@@ -301,7 +301,7 @@ var aaa = [
   // day selection
   {
     x0: 26,
-    x1: g.getWidth() - 1 - 26,
+    x1: g.getWidth() - 27,
     y0: 24,
     y1: 68,
     interrupt: true,
@@ -309,7 +309,7 @@ var aaa = [
   },
   // open settings
   {
-    x0: g.getWidth() - 1 - 26,
+    x0: g.getWidth() - 27,
     x1: g.getWidth() - 1,
     y0: 24,
     y1: 68,
