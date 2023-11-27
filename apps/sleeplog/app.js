@@ -93,11 +93,11 @@ function drawGraph(log, date, pos) {
   // set y position
   var y = pos ? 144 : 110;
   // clear area
-  g.reset().clearRect(0, y, width, y + 33);
+  g.reset().clearRect(0, y, myWidth, y + 33);
   // draw x axis
-  g.drawLine(0, y + 19, width, y + 19);
+  g.drawLine(0, y + 19, myWidth, y + 19);
   // draw x label
-  var stepWidth = width / 12;
+  var stepWidth = myWidth / 12;
   var startHour = date.getHours() + (pos ? 0 : 12);
   for (var x = 0; x < 12; x++) {
     g.fillRect(x * stepWidth, y + 20, x * stepWidth, y + 22);
@@ -114,8 +114,8 @@ function drawGraph(log, date, pos) {
   // cycle through log
   log.forEach((entry, index, log) => {
     // calculate positions
-    var x1 = Math.ceil((entry[0] - log[0][0]) / 72 * width);
-    var x2 = Math.floor(((log[index + 1] || [date / 6E5])[0] - log[0][0]) / 72 * width);
+    var x1 = Math.ceil((entry[0] - log[0][0]) / 72 * myWidth);
+    var x2 = Math.floor(((log[index + 1] || [date / 6E5])[0] - log[0][0]) / 72 * myWidth);
     // calculate y2 position
     var y2 = y + 18 * (1 - heights[entry[1]]);
     // set color depending on status and consecutive sleep
@@ -231,7 +231,7 @@ function draw() {
   if (ATID) ATID = clearTimeout(ATID);
 
   // clear app area
-  g.reset().clearRect(0, 24, width, width);
+  g.reset().clearRect(0, 24, myWidth, myWidth);
 
   // set date to calculate data for
   var calcDate = new Date(startDate - prevDays * 864E5);
@@ -257,10 +257,10 @@ function draw() {
   }
   // draw service and settings icon
   if (imgStr) g.drawImage(atob(imgStr), 2, 36);
-  g.reset().drawImage(atob("FBSBAAAeAAPgAHwAB4AA8AAPAwDwcA+PAP/wH/4D/8B/8A/gAfwAP4AH8AD+AA/AAPgABwAA"), width - 22, 36);
+  g.reset().drawImage(atob("FBSBAAAeAAPgAHwAB4AA8AAPAwDwcA+PAP/wH/4D/8B/8A/gAfwAP4AH8AD+AA/AAPgABwAA"), myWidth - 22, 36);
 
   // show loading info with progresss bar
-  g.reset().drawRect(7, 117, width - 8, 157)
+  g.reset().drawRect(7, 117, myWidth - 8, 157)
     .setFont("6x8").setFontAlign(0, 0)
     .drawString( /*LANG*/ "calculating data ...\nplease be patient :)", 87, 133)
     .drawRect(17, 145, 157, 151);
@@ -296,15 +296,15 @@ var infoData; //      storage for info data
 var ATID; //          analysis timeout ID
 var drawingID = 0; // drawing ID for ongoing process
 // get screen width and center (zero based)
-var width = g.getWidth() - 1;
-var center = width / 2 - 1;
+var myWidth = g.getWidth() - 1;
+var center = myWidth / 2 - 1;
 
 // set areas and actions array
 var aaa = [
   // day selection
   {
     x0: 26,
-    x1: width - 26,
+    x1: myWidth - 26,
     y0: 24,
     y1: 68,
     interrupt: true,
@@ -312,8 +312,8 @@ var aaa = [
   },
   // open settings
   {
-    x0: width - 26,
-    x1: width,
+    x0: myWidth - 26,
+    x1: myWidth,
     y0: 24,
     y1: 68,
     interrupt: true,
@@ -322,7 +322,7 @@ var aaa = [
   // change info type
   {
     x0: 0,
-    x1: width,
+    x1: myWidth,
     y0: 69,
     y1: 105,
     funct: () => {

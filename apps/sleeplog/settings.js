@@ -91,7 +91,7 @@
       }
 
       // free ram
-      file = undefined
+      file = undefined;
       // set this start as max, if less entries than expected
       if (data.length < count) maxStart = start;
       return data;
