@@ -1,0 +1,13 @@
+{
+  "id": "nextshed",
+  "name": "Next Scheduler Clockinfo",
+  "version":"0.01",
+  "description": "Adding two clockinfo items, displaying the upcoming alarms and timers.",
+  "icon": "app.png",
+  "type": "clkinfo",
+  "tags": "clkinfo,sched,alarm,timer",
+  "supports" : ["BANGLEJS2"],
+  "storage": [
+    {"name":"nextsched.clkinfo.js","url":"clkinfo.js"}
+  ]
+}   
