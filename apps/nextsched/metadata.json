@@ -1,5 +1,5 @@
 {
-  "id": "nextshed",
+  "id": "nextsched",
   "name": "Next Scheduler Clockinfo",
   "version":"0.01",
   "description": "Adding two clockinfo items, displaying the upcoming alarms and timers.",
