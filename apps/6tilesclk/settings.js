@@ -33,8 +33,7 @@
       title: /*LANG*/"Date Settings",
       onchange: () => openDateMenu()
     },{
-      title: /*LANG*/"Tile Filter:",
-      onchange: () => openTileMenu(i)
+      title: /*LANG*/"Tile Filter:"
     }];
     // add main menu entries for each tile
     [0, 1, 2, 3, 4, 5].forEach(i => menu.push({
