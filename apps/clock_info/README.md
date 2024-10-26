@@ -25,7 +25,7 @@ By default Clock Info provides:
 But by installing other apps that are tagged with the type `clkinfo` you can
 add extra features. For example [Sunrise Clockinfo](http://banglejs.com/apps/?id=clkinfosunrise)
 
-A full list is available at https://banglejs.com/apps/?q=clkinfo
+A full list is available at https://banglejs.com/apps/?c=clkinfo
 
 ## Settings
 
@@ -50,7 +50,7 @@ extensions).
 `load()` returns an array of menu objects, where each object contains a list of menu items:
 * `name` : text to display and identify menu object (e.g. weather)
 * `img` : a 24x24px image
-* `dynamic` : if `true`, items are not constant but are sorted (e.g. calendar events sorted by date)
+* `dynamic` : if `true`, items are not constant but are sorted (e.g. calendar events sorted by date). This is only used by a few clocks, for example `circlesclock`
 * `items` : menu items such as temperature, humidity, wind etc.
 
 Note that each item is an object with:
@@ -70,10 +70,12 @@ Note that each item is an object with:
 }
 ```
 
-* `item.show` : called when item should be shown. Enables updates. Call BEFORE 'get'
-* `item.hide` : called when item should be hidden. Disables updates.
+* `item.show` : called when item should be shown. Enables updates. Call BEFORE 'get'. Passed the clockinfo options (same as what's returned from `addInteractive`).
+* `item.hide` : called when item should be hidden. Disables updates. Passed the clockinfo options.
 * `.on('redraw', ...)` : event that is called when 'get' should be called again (only after 'item.show')
 * `item.run` : (optional) called if the info screen is tapped - can perform some action. Return true if the caller should feedback the user.
+* `item.focus` : called when the item is focussed (the user has tapped on it). Passed the clockinfo options.
+* `item.blur` : called when the item is unfocussed (the user has tapped elsewhere, the screen has locked, etc). Passed the clockinfo options.
 
 See the bottom of `lib.js` for example usage...
 
