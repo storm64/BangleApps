@@ -1,13 +1,14 @@
 { "id": "backswipe",
   "name": "Back Swipe",
   "shortName":"BackSwipe",
-  "version":"0.04",
+  "version":"0.05",
   "description": "Service that allows you to use an app's back button using left to right swipe gesture",
   "icon": "app.png",
   "tags": "back,gesture,swipe",
   "supports" : ["BANGLEJS2"],
   "readme":"README.md",
   "type": "bootloader",
+  "author": "Kedlub",
   "storage": [
     {"name":"backswipe.boot.js","url":"boot.js"},
     {"name":"backswipe.settings.js","url":"settings.js"}

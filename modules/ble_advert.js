@@ -12,7 +12,26 @@ var advertise = function (options) {
         }
         return obj;
     };
-    NRF.setAdvertising(clone(Bangle.bleAdvert), options);
+    if (process.env.VERSION >= "2.26") {
+        options = options || {};
+        if (!options.manufacturer)
+            options.manufacturer = false;
+    }
+    var adv = clone(Bangle.bleAdvert);
+    try {
+        NRF.setAdvertising(adv, options);
+    }
+    catch (e) {
+        if (e.toString().includes("INVALID_LENGTH")) {
+            options.showName = false;
+            try {
+                NRF.setAdvertising(adv, options);
+            }
+            catch (e) {
+                console.log("ble_advert error", e);
+            }
+        }
+    }
 };
 var manyAdv = function (bleAdvert) {
     return Array.isArray(bleAdvert) && typeof bleAdvert[0] === "object";
@@ -64,6 +83,29 @@ exports.push = function (adv, options) {
     }
     else {
         bangle.bleAdvert = [adv, {}];
+    }
+    advertise(options);
+};
+exports.remove = function (id, options) {
+    var bangle = Bangle;
+    if (manyAdv(bangle.bleAdvert)) {
+        var i = 0;
+        for (var _i = 0, _a = bangle.bleAdvert; _i < _a.length; _i++) {
+            var ad = _a[_i];
+            if (Array.isArray(ad))
+                continue;
+            if (ad[id]) {
+                delete ad[id];
+                if (Object.keys(ad).length === 0)
+                    bangle.bleAdvert.splice(i, 1);
+                break;
+            }
+            i++;
+        }
+    }
+    else if (bangle.bleAdvert) {
+        if (!Array.isArray(bangle.bleAdvert))
+            delete bangle.bleAdvert[id];
     }
     advertise(options);
 };

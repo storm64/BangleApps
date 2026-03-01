@@ -27,6 +27,7 @@ let settings = Object.assign({
   B6: "caden",
   paceLength: 1000,
   alwaysResume: false,
+  vibrate: false,
   notify: {
     dist: {
       value: 0,
@@ -48,7 +49,13 @@ let settings = Object.assign({
 }, require("Storage").readJSON("runplus.json", 1) || {});
 let statIDs = [settings.B1,settings.B2,settings.B3,settings.B4,settings.B5,settings.B6].filter(s=>s!=="");
 let exs = ExStats.getStats(statIDs, settings);
+let recordMode = settings.alwaysResume ? "new" : undefined; // if always resuming, start a new track then resume into it for subsequent onStartStop()s
 // ---------------------------
+
+// handle the case where we were stopped outside of the app
+if(exs.state.active && settings.record && require("recorder") && !require("recorder").isRecording()){
+  exs.stop();
+}
 
 function setStatus(running) {
   layout.button.label = running ? "STOP" : "START";
@@ -59,6 +66,8 @@ function setStatus(running) {
 
 // Called to start/stop running
 function onStartStop() {
+  if (settings.vibrate) Bangle.buzz(250);
+
   if (screen === "karvonen") {
     // start/stop on the karvonen screen reverts us to the main screen
     setScreen("main");
@@ -87,14 +96,20 @@ function onStartStop() {
   // an overwrite before we start tracking exstats
   if (settings.record && WIDGETS["recorder"]) {
     if (running) {
-      screen = "menu";
       promise = promise.
-        then(() => WIDGETS["recorder"].setRecording(true, { force : shouldResume?"append":undefined })).
         then(() => {
+          screen = "menu";
+          const ret = WIDGETS["recorder"].setRecording(true, { force : recordMode });
+          if(shouldResume) recordMode = "append"; // subsequent onStartStop()s resume the new recording
+          return ret;
+        }).then(() => {
           screen = "main";
-          layout.setUI(); // grab our input handling again
-          layout.forgetLazyState();
-          layout.render();
+          if(!shouldResume){
+            // setRecording might have rendered - need to grab UI
+            layout.setUI(); // grab our input handling again
+            layout.forgetLazyState();
+            layout.render();
+          }
         });
     } else {
       promise = promise.then(
@@ -143,7 +158,7 @@ function zoom(statID) {
       .clearRect(R)
       .setFontAlign(0, 0);
 
-    layout.render(layout.bottom);
+    tick();
 
     const value = exs.state.active ? stat.getString() : "____";
 
@@ -217,6 +232,20 @@ Bangle.on("GPS", function(fix) {
   }
 });
 
+const tick = () => {
+  layout.clock.label = locale.time(new Date(),1);
+  switch (screen) {
+    case "main":
+      layout.render();
+      break;
+    case "zoom":
+      layout.render(layout.bottom);
+      break;
+    case "menu":
+      break;
+  }
+};
+
 function setScreen(to) {
   if (screen === "karvonen") {
     require("runplus_karvonen").stop();
@@ -235,12 +264,8 @@ function setScreen(to) {
       layout.render();
       layout.lazy = true;
       // We always call ourselves once a second to update
-      if (!runInterval){
-        runInterval = setInterval(function() {
-          layout.clock.label = locale.time(new Date(),1);
-          if (screen !== "menu") layout.render();
-        }, 1000);
-      }
+      if (!runInterval)
+        runInterval = setInterval(tick, 1000);
       break;
 
     case "karvonen":

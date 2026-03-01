@@ -20,8 +20,9 @@ Graphics.prototype.setFontLECO1976Regular14 = function() {
 
 {
 const SETTINGS_FILE = "pebblepp.json";
-let settings = Object.assign({'theme':'System', 'showdate':true, 'clkinfoborder': false}, require("Storage").readJSON(SETTINGS_FILE,1)||{});
+let settings = Object.assign({'theme':'System', 'showdate':true, 'clkinfoborder': true}, require("Storage").readJSON(SETTINGS_FILE,1)||{});
 let background = require("clockbg");
+background.load(); // reload if we fast loaded into here
 let theme;
 let drawTimeout;
 
@@ -70,9 +71,6 @@ loadThemeColors();
 // Load the clock infos
 let clockInfoW = 0|(w/2);
 let clockInfoH = 0|(h/2);
-let clockInfoG = Graphics.createArrayBuffer(26, 26, 2, {msb:true});
-clockInfoG.transparent = 3;
-clockInfoG.palette = new Uint16Array([g.theme.bg, g.theme.fg, g.toColor("#888"), g.toColor("#888")]);
 let clockInfoItems = require("clock_info").load();
 let clockInfoDraw = (itm, info, options) => {
   // itm: the item containing name/hasRange/etc
@@ -102,7 +100,7 @@ let clockInfoDraw = (itm, info, options) => {
     g.setFontLECO1976Regular14();
   if (g.stringWidth(txt) > options.w) {// if still too big, split to 2 lines
     var l = g.wrapString(txt, options.w);
-    txt = l.slice(0,2).join("\n") + (l.length>2)?"...":"";
+    txt = l.slice(0,2).join("\n") + ((l.length>2)?"...":"");
   }
   y = options.y+options.h-12;
   if (settings.clkinfoborder) {
@@ -132,11 +130,13 @@ Bangle.setUI({
     // Called to unload all of the clock app
     if (drawTimeout) clearTimeout(drawTimeout);
     drawTimeout = undefined;
+    background.unload(); // free memory from background
     clockInfoMenuA.remove();
     clockInfoMenuB.remove();
     delete Graphics.prototype.setFontLECO1976Regular22;
     delete Graphics.prototype.setFontLECO1976Regular42;
     delete Graphics.prototype.setFontLECO1976Regular14;
+    g.reset().clearRect(0,0,g.getWidth(),24); // clear the rect where the widgets are
     require("widget_utils").show(); // re-show widgets
   }});
 

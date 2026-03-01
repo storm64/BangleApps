@@ -2,7 +2,10 @@
   const defaultSettings = {
     loadWidgets    : false,
     textAboveHands : false,
-    shortHrHand    : false
+    shortHrHand    : false,
+    weekdayNoYear  : false,
+    noBattery      : false,
+    darkTheme      : true
   }
   let settings = Object.assign(defaultSettings, require('Storage').readJSON('andark.json',1)||{});
 
@@ -22,7 +25,19 @@
       value : !!settings.shortHrHand,
       onchange : v => { settings.shortHrHand=v; save();}
     },
+    /*LANG*/'Show weekday not year': {
+      value : !!settings.weekdayNoYear,
+      onchange : v => { settings.weekdayNoYear=v; save();}
+    },
+    /*LANG*/'Hide the battery': {
+      value : !!settings.noBattery,
+      onchange : v => { settings.noBattery=v; save();}
+    },
+    /*LANG*/'Dark theme': {
+      value : !!settings.darkTheme,
+      onchange : v => { settings.darkTheme=v; save();}
+    },
   };
 
   E.showMenu(appMenu);
-});
+})

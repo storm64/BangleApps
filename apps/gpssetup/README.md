@@ -48,13 +48,18 @@ used. These settings will remain for all apps that use the GPS.
    the interval the more time the GPS will spend sleeping in low
    power mode (7mA) between obtaining fixes (35mA).  For walking in
    open country an update once every 60 seconds is adequate to put
-   you within a 6 digit grid refernce sqaure.
+   you within a 6 digit grid refernce sqaure. 
+   
+      **Note:** For the Bangle.js2, the GPS module does not have a PSMOO mode, and thus this is emulated using on/off timeouts specified using the update and search options.
 
 - update - the time between two position fix attempts.
 
 - search - the time between two acquisition attempts if the receiver
   is unable to get a position fix.
 
+- fix_req (Bangle.js2 only) - the number of fixes required before the GPS turns off until next search for GPS signal. default is 1.
+
+- adaptive (Bangle.js2 only) - When a GPS signal is acquired, this can reduce the time in seconds until next scan to generate higher temporal resolution of gps fixes. Off if set to 0.
 ## Module
 
 A module is provided that'll allow you to set GPS configuration from your own
@@ -65,11 +70,13 @@ app. To use it:
 // needed unless the watch's battery has run down
 require("gpssetup").setPowerMode();
 
-// This sets up the PSMOO mode. update/search are optional in seconds
+// This sets up the PSMOO mode. update/search/adaptive are optional in seconds
 require("gpssetup").setPowerMode({
   power_mode:"PSMOO",
   update:optional (default 120),
-  search:optional (default 5)})
+  search:optional (default 5),
+  adaptive: optional (default 0)
+  });
 
 // This sets up SuperE
 require("gpssetup").setPowerMode({power_mode:"SuperE"})

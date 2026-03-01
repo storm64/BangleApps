@@ -6,8 +6,9 @@
   "description": "A keyboard on your wrist! Swipe right for space, left for delete.",
   "icon": "app.png",
   "allow_emulator": true,
-  "tags": "tools, keyboard, text, scribble",
+  "tags": "tools,keyboard,text,scribble",
   "supports" : ["BANGLEJS2"],
+  "author": "enricorov",
   "readme": "README.md",
   "storage": [
     {"name":"scribble.app.js","url":"app.js"},

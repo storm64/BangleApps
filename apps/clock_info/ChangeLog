@@ -13,3 +13,18 @@
 0.12: Add drawFilledImage to allow drawing icons with a separately coloured middle
 0.13: Cache loaded ClockInfos so if we have clockInfoWidget and a clock, we don't load them twice (saves ~300ms)
 0.14: Check for .clkinfocache and use that if exists (from boot 0.64)
+0.15: Fix error when displaying a category with only one clockinfo (fix #3728)
+0.16: Add BLE clkinfo entry
+0.17: Fix BLE icon alignment and border on some clocks
+0.18: Tweak BLE icon to add gap and ensure middle of B isn't filled
+0.19: Fix Altitude ClockInfo after BLE added
+      Tapping Altitude now updates the reading
+0.20: Altitude ClockInfo now uses the distance units set in locale.
+0.21: Add haptics when changing infos and a setting to toggle it on or off
+0.22: Tapping on step counter now disable step counting on 2v29+ firmwares
+0.23: Use filter function for better image borders if it exists (2v22)
+0.24: Only save settings once (not once per clockinfo)
+      Add .setFocus function to allow a clockinfo to be focused without faking a click on it
+0.25: Add ability to filter-out installed clockinfos
+0.26: Add setting to move HRM and Steps clockinfos to its own 'Health' category for better organization.
+0.27: Change BLE clockInfo to use event-based updating, and added a "Conn" display when connected to a device.

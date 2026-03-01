@@ -2,6 +2,12 @@ require('Font5x9Numeric7Seg').add(Graphics);
 require('Font7x11Numeric7Seg').add(Graphics);
 require('FontTeletext5x9Ascii').add(Graphics);
 
+const KEY_SCORE_L = 0;
+const KEY_SCORE_R = 1;
+const KEY_MENU = 2;
+const KEY_TENNIS_H = 3;
+const KEY_TENNIS_L = 4;
+
 let settingsMenu = eval(require('Storage').read('score.settings.js'));
 let settings = settingsMenu(null, null, true);
 
@@ -10,6 +16,7 @@ let tennisScores = ['00','15','30','40','DC','AD'];
 let scores = null;
 let tScores = null;
 let cSet = null;
+let matchEnd = null;
 
 let firstShownSet = null;
 
@@ -19,10 +26,10 @@ let correctionMode = false;
 let w = g.getWidth();
 let h = g.getHeight();
 
-let isBangle1 = process.env.BOARD === 'BANGLEJS';
+let isBangle1 = process.env.BOARD === 'BANGLEJS' || process.env.BOARD === 'EMSCRIPTEN';
 
 function getXCoord(func) {
-  let offset = 40;
+  let offset = 20;
   return func(w-offset)+offset;
 }
 
@@ -43,37 +50,76 @@ function setupDisplay() {
 }
 
 function setupInputWatchers(init) {
-  Bangle.setUI('updown', v => {
-    if (v) {
-      if (isBangle1) {
+  Bangle.setUI('updown',
+    isBangle1
+    ? (v => {
+      if (v) {
         let i = settings.mirrorScoreButtons ? v : v * -1;
         handleInput(Math.floor((i+2)/2));
-      } else {
+      }
+    })
+    : (v => {
+      if (v) {
+        // +1 -> 4
+        // -1 -> 3
         handleInput(Math.floor((v+2)/2)+3);
       }
-    }
-  });
+    })
+  );
   if (init) {
-    setWatch(() => handleInput(2), isBangle1 ? BTN2 : BTN, { repeat: true });
-    Bangle.on('touch', (b, e) => {
-      if (isBangle1) {
+    setWatch(
+      () => handleInput(KEY_MENU),
+      isBangle1 ? BTN2 : BTN,
+      { repeat: true },
+    );
+    Bangle.on('touch',
+      isBangle1
+      ? ((b, e) => {
         if (b === 1) {
-          handleInput(3);
+          handleInput(KEY_TENNIS_H);
         } else {
-          handleInput(4);
+          handleInput(KEY_TENNIS_L);
         }
-      } else {
-        if (e.x < getXCoord(w => w/2)) {
-          handleInput(0);
+      })
+      : ((b, e) => {
+        if (e.y > 18) {
+          if (e.x < getXCoord(w => w/2)) {
+            handleInput(KEY_SCORE_L);
+          } else {
+            handleInput(KEY_SCORE_R);
+          }
         } else {
-          handleInput(1);
+          // long press except if we have the menu opened or we are in the emulator (that doesn't
+          // seem to support long press events)
+          if (e.type === 2 || settingsMenuOpened || process.env.BOARD === 'EMSCRIPTEN2') {
+            handleInput(KEY_MENU);
+          } else {
+            let p = null;
+
+            if (matchWon(0)) p = 0;
+            else if (matchWon(1)) p = 1;
+
+            // display full instructions if there is space available, or brief ones otherwise
+            if (p === null) {
+              drawInitialMsg();
+            } else {
+              g.setFontAlign(0,0);
+              g.setFont('Teletext5x9Ascii',1);
+              g.drawString(
+                "-Long press-",
+                getXCoord(w => p === 0 ? w/4*3: (w/4) + 20),
+                15
+              );
+            }
+          }
         }
-      }
-    });
+      })
+    );
   }
 }
 
 function setupMatch() {
+  matchEnd = null;
   scores = [];
   for (let s = 0; s < sets(); s++) {
     scores.push([0,0,null,0,0]);
@@ -96,15 +142,16 @@ function setupMatch() {
 
 function showSettingsMenu() {
   settingsMenuOpened = getSecondsTime();
-  settingsMenu(function (s, reset) {
-    E.showMenu();
+  settingsMenu(function (s, reset, back) {
+    // console.log('reset:', reset, 'back:', back);
+    if (isBangle1) {
+      E.showMenu();
+    }
 
     settings = s;
 
     if (reset) {
       setupMatch();
-    } else if (getSecondsTime() - settingsMenuOpened < 500 || correctionMode) {
-      correctionMode = !correctionMode;
     }
 
     settingsMenuOpened = null;
@@ -117,6 +164,9 @@ function showSettingsMenu() {
     switch (msg) {
       case 'end_set':
         updateCurrentSet(1);
+        break;
+      case 'correct_mode':
+        correctionMode = !correctionMode;
         break;
     }
   });
@@ -144,6 +194,7 @@ function currentSet() {
 
 function shouldTiebreak() {
   return settings.enableMaxScoreTiebreak &&
+    scores[cSet][0] === scores[cSet][1] &&
     scores[cSet][0] + scores[cSet][1] === (maxScore() - 1) * 2;
 }
 
@@ -176,27 +227,21 @@ function tiebreakWon(set, player) {
   let pScore = scores[set][3+player];
   let p2Score = scores[set][3+~~!player];
 
-  let winScoreReached = pScore >= settings.maxScoreTiebreakWinScore;
-  let isTwoAhead = !settings.maxScoreTiebreakEnableTwoAhead || pScore - p2Score >= 2;
-  let reachedMaxScore = settings.maxScoreTiebreakEnableMaxScore && pScore >= tiebreakMaxScore();
-
-  return reachedMaxScore || (winScoreReached && isTwoAhead);
+  // reachedMaxScore || (winScoreReached && isTwoAhead);
+  return (settings.maxScoreTiebreakEnableMaxScore && pScore >= tiebreakMaxScore()) ||
+    ((pScore >= settings.maxScoreTiebreakWinScore) &&
+     (!settings.maxScoreTiebreakEnableTwoAhead || pScore - p2Score >= 2));
 }
 
 function setWon(set, player) {
   let pScore = scores[set][player];
   let p2Score = scores[set][~~!player];
 
-  let winScoreReached = pScore >= settings.winScore;
-  let isTwoAhead = !settings.enableTwoAhead || pScore - p2Score >= 2;
-  let tiebreakW = tiebreakWon(set, player);
-  let reachedMaxScore = settings.enableMaxScore && pScore >= maxScore();
-  let manuallyEndedWon = cSet > set ? pScore > p2Score : false;
-
+  // (tiebreak won / max score) || (winScoreReached && isTwoAhead) || manuallyEndedWon
   return (
-    (settings.enableMaxScoreTiebreak ? tiebreakW : reachedMaxScore) ||
-      (winScoreReached && isTwoAhead) ||
-      manuallyEndedWon
+    (settings.enableMaxScoreTiebreak ? tiebreakWon(set, player) : settings.enableMaxScore && pScore >= maxScore()) ||
+      (pScore >= settings.winScore && (!settings.enableTwoAhead || pScore - p2Score >= 2)) ||
+      (cSet > set ? pScore > p2Score : false)
   );
 }
 
@@ -205,7 +250,7 @@ function setEnded(set) {
 }
 
 function setsWon(player) {
-  return Array(sets()).fill(0).map((_, s) => ~~setWon(s, player)).reduce((a,v) => a+v, 0);
+  return Uint16Array(sets()).fill(0).map((_, s) => ~~setWon(s, player)).reduce((a,v) => a+v, 0);
 }
 
 function matchWon(player) {
@@ -213,7 +258,14 @@ function matchWon(player) {
 }
 
 function matchEnded() {
-  return (matchWon(0) || matchWon(1)) && cSet > (setsWon(0) + setsWon(1) - 1);
+  // query if the match is ended only if: the value is not already saved or the set changed
+  if (matchEnd == null || matchEnd.set != cSet) {
+    matchEnd = {
+      ended: (matchWon(0) || matchWon(1)) && cSet > (setsWon(0) + setsWon(1) - 1),
+      set: cSet,
+    }
+  }
+  return matchEnd.ended
 }
 
 function matchScore(player) {
@@ -304,20 +356,33 @@ function score(player) {
 }
 
 function handleInput(button) {
+  // console.log('button:', button);
   if (settingsMenuOpened) {
+
+    if (!isBangle1 && button == KEY_MENU) { // Bangle2 long press, hide menu
+      E.showMenu();
+
+      settingsMenuOpened = null;
+
+      draw();
+
+      setupDisplay();
+      setupInputWatchers();
+
+    }
     return;
   }
 
   switch (button) {
-    case 0:
-    case 1:
+    case KEY_SCORE_L:
+    case KEY_SCORE_R:
       score(button);
       break;
-    case 2:
+    case KEY_MENU:
       showSettingsMenu();
       return;
-    case 3:
-    case 4: {
+    case KEY_TENNIS_H:
+    case KEY_TENNIS_L: {
       let hLimit = currentSet() - setsPerPage() + 1;
       let lLimit = 0;
       let val = (button * 2 - 7);
@@ -332,16 +397,15 @@ function handleInput(button) {
 }
 
 function draw() {
-  g.setFontAlign(0,0);
-  g.clear();
+  g.reset().setFontAlign(0,0).clear();
 
   for (let p = 0; p < 2; p++) {
     if (matchWon(p)) {
       g.setFontAlign(0,0);
       g.setFont('Teletext5x9Ascii',2);
       g.drawString(
-        "WINNER",
-        getXCoord(w => p === 0 ? w/4 : w/4*3),
+        "WINS",
+        getXCoord(w => p === 0 ? w/4 + 7 : w/4*3 + 7),
         15
       );
     } else if (matchEnded()) {
@@ -376,7 +440,7 @@ function draw() {
       g.setFont('7x11Numeric7Seg',2);
       g.drawString(
         formatNumber(matchScore(p), 3),
-        getXCoord(w => p === 0 ? w/2 - 3 : w/2 + 6),
+        getXCoord(w => p === 0 ? w/2 - 6 : w/2 + 9),
         h-5
       );
     }
@@ -387,7 +451,7 @@ function draw() {
     g.setFont('Teletext5x9Ascii',2);
     g.drawString(
       "R",
-      getXCoord(w => w/2),
+      getXCoord(w => w/2) + 1,
       h-10
     );
   }
@@ -411,13 +475,13 @@ function draw() {
     g.drawString(set+1, 5, y-10);
     if (scores[set+1][2] != null) {
       let dur2 = formatDuration(scores[set+1][2] - scores[set][2]);
-      g.drawString(dur2, 5, y+10);
+      g.drawString(dur2, 2, y+10);
     }
 
     for (let p = 0; p < 2; p++) {
       if (!setWon(set, p === 0 ? 1 : 0) || matchEnded()) {
-        let bigNumX = getXCoord(w => p === 0 ? w/4-12 : w/4*3+15);
-        let smallNumX = getXCoord(w => p === 0 ? w/2-2 : w/2+3);
+        let bigNumX = getXCoord(w => p === 0 ? w/4-2 : w/4*3+5);
+        let smallNumX = getXCoord(w => p === 0 ? w/2-1 : w/2+2);
 
         if (settings.enableTennisScoring && set === cSet && !shouldTiebreak()) {
           g.setFontAlign(0,0);
@@ -427,12 +491,12 @@ function draw() {
             bigNumX,
             y
           );
-        } else if (shouldTiebreak() && set === cSet) {
+        } else if (set === cSet && shouldTiebreak()) {
           g.setFontAlign(0,0);
           g.setFont('7x11Numeric7Seg',3);
           g.drawString(
             formatNumber(scores[set][3+p], 3),
-            bigNumX,
+            bigNumX + (p === 0 ? -5 : 5),
             y
           );
         } else {
@@ -445,7 +509,7 @@ function draw() {
           );
         }
 
-        if ((shouldTiebreak() || settings.enableTennisScoring) && set === cSet) {
+        if (set === cSet && (shouldTiebreak() || settings.enableTennisScoring)) {
           g.setFontAlign(p === 0 ? 1 : -1,0);
           g.setFont('7x11Numeric7Seg',1);
           g.drawString(
@@ -472,7 +536,20 @@ function draw() {
   g.flip();
 }
 
+function drawInitialMsg() {
+  if (!isBangle1) {
+    g.setFontAlign(0,0);
+    g.setFont('Teletext5x9Ascii',1);
+    g.drawString(
+      "-Long press here for menu-",
+      90,
+      15
+    );
+  }
+}
+
 setupDisplay();
 setupInputWatchers(true);
 setupMatch();
 draw();
+drawInitialMsg();

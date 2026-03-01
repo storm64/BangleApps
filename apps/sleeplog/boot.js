@@ -11,9 +11,11 @@ global.sleeplog = {
     // threshold settings
     maxAwake: 36E5, //  [ms] maximal awake time to count for consecutive sleep
     minConsec: 18E5, // [ms] minimal time to count for consecutive sleep
-    deepTh: 100, //     threshold for deep sleep
-    lightTh: 200, //    threshold for light sleep
-    wearTemp: 19.5, //    temperature threshold to count as worn
+    deepTh: 150, //     threshold for deep sleep
+    lightTh: 300, //    threshold for light sleep
+    wearTemp: 19.5,
+    hrmDeepTh: 60,
+    hrmLightTh: 74
   }, require("Storage").readJSON("sleeplog.json", true) || {})
 };
 
@@ -25,7 +27,7 @@ if (global.sleeplog.conf.enabled) {
     start: function() {
       // add kill and health listener
       E.on('kill', global.sleeplog.saveStatus);
-      Bangle.on('health', global.sleeplog.health);
+      Bangle.prependListener('health', global.sleeplog.health);
 
       // restore saved status
       this.restoreStatus();
@@ -149,20 +151,24 @@ if (global.sleeplog.conf.enabled) {
     // define health listener function
     // - called by event listener: "this"-reference points to global
     health: function(data) {
+      print("Sleep Log - Health Data Acquired");
       // check if global variable accessable
       if (!global.sleeplog) return new Error("sleeplog: Can't process health event, global object missing!");
-
       // check if movement is available
-      if (!data.movement) return;
-
+      if (!data.movement&&!data.bpm) return;
       // add timestamp rounded to 10min, corrected to 10min ago
       data.timestamp = data.timestamp || ((Date.now() / 6E5 | 0) - 1) * 6E5;
-
       // add preliminary status depending on charging and movement thresholds
       // 1 = not worn, 2 = awake, 3 = light sleep, 4 = deep sleep
-      data.status = Bangle.isCharging() ? 1 :
-        data.movement <= global.sleeplog.conf.deepTh ? 4 :
-        data.movement <= global.sleeplog.conf.lightTh ? 3 : 2;
+      if(data.bpm){
+        data.status = Bangle.isCharging() ? 1 :
+          data.bpm <= global.sleeplog.conf.hrmDeepTh ? 4 :
+          data.bpm <= global.sleeplog.conf.hrmLightTh ? 3 : 2;
+      }else{
+        data.status = Bangle.isCharging() ? 1 :
+          data.movement <= global.sleeplog.conf.deepTh ? 4 :
+          data.movement <= global.sleeplog.conf.lightTh ? 3 : 2;
+      }
 
       // check if changing to deep sleep from non sleeping
       if (data.status === 4 && global.sleeplog.status <= 2) {
@@ -176,6 +182,9 @@ if (global.sleeplog.conf.enabled) {
         // set status
         global.sleeplog.setStatus(data);
       }
+      // update activity in the 'health' event for when it's logged/sent to Gadgetbridge
+      if (data.status==3) data.activity="LIGHT_SLEEP";
+      if (data.status==4) data.activity="DEEP_SLEEP";
     },
 
     // check wearing status either based on HRM or temperature as set in settings

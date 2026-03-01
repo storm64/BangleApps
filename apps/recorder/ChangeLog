@@ -54,3 +54,13 @@
 0.42: Minor code improvements
 0.43: Fix interaction on clocks without widgets
 0.44: List tracks in reverse chronological order.
+0.45: Move recorder from widget into library
+      Improve recorder ClockInfo icons
+0.46: Ensure altitude graph draws properly (or any graph using the last column of CSV data)
+      Lower accuracy of barometer data to ~1cm (saves about 15b/record)
+0.47: Fix 'blip' on speed map on some recordings
+      Ensure Battery voltage is only stored to 0.01v
+      Add graphs for Steps+Battery
+0.48: Add ability to log average acceleration values
+0.49: Log average high confidence (>=80) HR reading for each interval, instead of logging the last 
+      reading. If none pass confidence threshold, fall back to highest low confidence reading.

@@ -4,15 +4,39 @@ exports.reload = function() {
   //let t = Date.now();
   settings = Object.assign({
     style : "randomcolor",
-    colors : ["#F00","#0F0","#00F"]
-  },require("Storage").readJSON("clockbg.json")||{});
+    colors : ["#00f","#0bf","#0f7","#3f0","#ff0","#f30","#f07","#b0f"]
+  },require("Storage").readJSON("clockbg.json",1)||{});
+  // if an array of arrays then we select one at random
+  if (settings.colors && settings.colors[0] instanceof Array)
+    settings.colors = settings.colors[Math.randInt(settings.colors.length)];
   if (settings.style=="image")
     settings.img = require("Storage").read(settings.fn);
   else if (settings.style=="randomcolor") {
     settings.style = "color";
     let n = (0|(Math.random()*settings.colors.length)) % settings.colors.length;
     settings.color = settings.colors[n];
-    delete settings.colors;
+  } else if (settings.style=="rings") { // 45 ms
+    settings.style = "image";
+    let bg = Graphics.createArrayBuffer(g.getWidth(),g.getHeight(),1,{msb:true});
+    var x,y,r,ri=Math.randInt,s=bg.getWidth()-20;
+    for (var i=0;i<10;i++) {
+      x = 10+ri(s);y=10+ri(s);r=10+ri(40);
+      bg.drawCircle(x,y,r).drawCircle(x,y,r-1).drawCircle(x,y,r-2).drawCircle(x,y,r-3);
+    }
+    bg.palette = new Uint16Array([g.toColor(settings.colors[0]),g.toColor(settings.colors[1])]);
+    settings.img = bg;
+    settings.imgOpt = {};
+  } else if (settings.style=="tris") { // 58ms
+    settings.style = "image";
+    let cols = settings.colors, ri = Math.randInt, r = ri(settings.colors.length), bpp = (cols.length>4)?4:2;
+    cols = cols.slice(r).concat(cols.slice(0,r)); // rotate palette
+    let bg = Graphics.createArrayBuffer(88,88,bpp,{msb:true});
+    bg.palette = new Uint16Array(1<<bpp);
+    bg.palette.set(cols.map(c=>g.toColor(c)));
+    let c = cols.length-1, rp = (function(r){"ram";return r()-10}).bind(null,ri.bind(null,bg.getWidth()+20)), a = [0,0,0,0,0,0];
+    for (var i=1;i<9;i++) bg.setColor(1+ri(c)).fillPoly(a.map(rp));
+    settings.img = bg;
+    settings.imgOpt = {scale:g.getWidth()/88};
   } else if (settings.style=="squares") { // 32ms
     settings.style = "image";
     let bpp = (settings.colors.length>4)?4:2;
@@ -24,8 +48,7 @@ exports.reload = function() {
     bg.palette = new Uint16Array(1<<bpp);
     bg.palette.set(settings.colors.map(c=>g.toColor(c)));
     settings.img = bg;
-    settings.imgOpt = {scale:16};
-    delete settings.colors;
+    settings.imgOpt = {scale:g.getWidth()/11};
   } else if (settings.style=="plasma") { // ~47ms
     settings.style = "image";
     let bg = Graphics.createArrayBuffer(16,16,4,{msb:true});
@@ -42,17 +65,28 @@ exports.reload = function() {
     bg.palette = new Uint16Array(16);
     bg.palette.set(settings.colors.map(c=>g.toColor(c)));
     settings.img = bg;
-    settings.imgOpt = {scale:11};
-    delete settings.colors;
+    settings.imgOpt = {scale:g.getWidth()/16};
   }
+  delete settings.colors; // not needed now
   //console.log("bg",Date.now()-t);
 };
-exports.reload();
+
+/// Will load settings if they haven't already been loaded
+exports.load = function() {
+  if (settings===undefined)
+    exports.reload();
+}
+
+/// Remove settings and free memory - .load() must be called before drawing again
+exports.unload = function() {
+  settings = undefined;
+}
 
 // Fill a rectangle with the current background style, rect = {x,y,w,h}
 // eg require("clockbg").fillRect({x:10,y:10,w:50,h:50})
 //    require("clockbg").fillRect(Bangle.appRect)
 exports.fillRect = function(rect,y,x2,y2) {
+  if (!settings) return;
   if ("object"!=typeof rect) rect = {x:rect,y:y,w:1+x2-rect,h:1+y2-y};
   if (settings.img) {
     g.setClipRect(rect.x, rect.y, rect.x+rect.w-1, rect.y+rect.h-1).drawImage(settings.img,0,0,settings.imgOpt).setClipRect(0,0,g.getWidth()-1,g.getHeight()-1);
@@ -63,3 +97,8 @@ exports.fillRect = function(rect,y,x2,y2) {
     g.setBgColor(g.theme.bg).clearRect(rect);
   }
 };
+
+// load background
+exports.reload();
+
+//exports.fillRect(Bangle.appRect); // testing

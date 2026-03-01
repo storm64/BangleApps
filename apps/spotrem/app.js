@@ -13,46 +13,45 @@ let dark = g.theme.dark; // bool
 let gfx = function() {
   widgetUtils.hide();
   R = Bangle.appRect;
-  marigin = 8;
-  // g.drawString(str, x, y, solid)
+  const MARIGIN = 8;
   g.clearRect(R);
   g.reset();
 
   if (dark) {g.setColor(0x07E0);} else {g.setColor(0x03E0);} // Green on dark theme, DarkGreen on light theme.
   g.setFont("4x6:2");
   g.setFontAlign(1, 0, 0);
-  g.drawString("->", R.x2 - marigin, R.y + R.h/2);
+  g.drawString("->", R.x2 - MARIGIN, R.y + R.h/2);
 
   g.setFontAlign(-1, 0, 0);
-  g.drawString("<-", R.x + marigin, R.y + R.h/2);
+  g.drawString("<-", R.x + MARIGIN, R.y + R.h/2);
 
   g.setFontAlign(-1, 0, 1);
-  g.drawString("<-", R.x + R.w/2, R.y + marigin);
+  g.drawString("<-", R.x + R.w/2, R.y + MARIGIN);
 
   g.setFontAlign(1, 0, 1);
-  g.drawString("->", R.x + R.w/2, R.y2 - marigin);
+  g.drawString("->", R.x + R.w/2, R.y2 - MARIGIN);
 
   g.setFontAlign(0, 0, 0);
   g.drawString("Play\nPause", R.x + R.w/2, R.y + R.h/2);
 
   g.setFontAlign(-1, -1, 0);
-  g.drawString("Menu", R.x + 2*marigin, R.y + 2*marigin);
+  g.drawString("Menu", R.x + 2*MARIGIN, R.y + 2*MARIGIN);
 
   g.setFontAlign(-1, 1, 0);
-  g.drawString("Wake", R.x + 2*marigin, R.y + R.h - 2*marigin);
+  g.drawString("Wake", R.x + 2*MARIGIN, R.y + R.h - 2*MARIGIN);
 
   g.setFontAlign(1, -1, 0);
-  g.drawString("Srch", R.x + R.w - 2*marigin, R.y + 2*marigin);
+  g.drawString("Srch", R.x + R.w - 2*MARIGIN, R.y + 2*MARIGIN);
 
   g.setFontAlign(1, 1, 0);
-  g.drawString("Saved", R.x + R.w - 2*marigin, R.y + R.h - 2*marigin);
+  g.drawString("Saved", R.x + R.w - 2*MARIGIN, R.y + R.h - 2*MARIGIN);
 };
 
 // Touch handler for main layout
 let touchHandler = function(_, xy) {
-  x = xy.x;
-  y = xy.y;
-  len = (R.w<R.h+1)?(R.w/3):(R.h/3);
+  let x = xy.x;
+  let y = xy.y;
+  let len = (R.w<R.h+1)?(R.w/3):(R.h/3);
 
   // doing a<b+1 seemed faster than a<=b, also using a>b-1 instead of a>b.
   if ((R.x-1<x && x<R.x+len) && (R.y-1<y && y<R.y+len)) {
@@ -82,7 +81,7 @@ let touchHandler = function(_, xy) {
     spotifyWidget("NEXT");
   } else if ((R.x-1<x && x<R.x2+1) && (R.y-1<y && y<R.y2+1)){
     //play/pause
-    playPause = isPaused?"play":"pause";
+    let playPause = isPaused?"play":"pause";
     Bangle.musicControl(playPause);
     isPaused = !isPaused;
   }
@@ -98,25 +97,84 @@ let swipeHandler = function(LR, _) {
   }
 };
 
+let dx = 0;
+let dy = 0;
+let volumeChangedThisGoAround = false;
+let knobTimeout;
+let dragHandler = function(e) {
+
+  let DialDisplay = require("Dial_Display");
+  let volumeKnobVisual = new DialDisplay();
+
+  let cb = ud => {
+      Bangle.musicControl(ud<0 ? "volumedown" : "volumeup");
+      Bangle.buzz(20);
+  }
+
+  let resetOuterScopeVariables = ()=>{
+    dy=0;
+    dx=0;
+    volumeChangedThisGoAround=false;
+  }
+
+  dx += e.dx;
+  dy += e.dy;
+  if (!e.b) {resetOuterScopeVariables();}
+
+  while (Math.abs(dy)>32) {
+    if (dy>0) { dy-=32; cb(-1) }
+    else { dy+=32; cb(1) }
+    volumeChangedThisGoAround = true;
+  }
+
+  if (volumeChangedThisGoAround && Math.abs(dx)>32) {
+      // setup volume knob here.
+    let cbVisual = (step)=>{
+      cb(step);
+      volumeKnobVisual.step(step);
+    };
+    cbVisual(Math.sign(dx)*Math.sign(g.getHeight()/2-e.y));
+    resetOuterScopeVariables();
+    let volumeKnob = require("dial")(cbVisual);
+    let timingOutVolumeKnob = (e)=>{
+        if (!e.b) {
+          setKnobTimeout();
+        } else if (knobTimeout) {
+          clearTimeout(knobTimeout);
+          knobTimeout = undefined;
+        }
+        volumeKnob(e);
+      }
+    let swipeMask = ()=>{
+        E.stopEventPropagation();
+      }
+    let setKnobTimeout = ()=>{
+        knobTimeout = setTimeout(()=>{
+          Bangle.removeListener("drag", timingOutVolumeKnob)
+          Bangle.removeListener("swipe", swipeMask);
+          Bangle.buzz(40);
+          setTimeout(Bangle.buzz, 150, 40, 0.8)
+          gfx();
+          knobTimeout = undefined;
+          print("removed volume knob")
+        }, 350);
+      }
+    Bangle.prependListener("drag", timingOutVolumeKnob);
+    Bangle.prependListener("swipe", swipeMask);
+  }
+};
+
 // Navigation input on the main layout
 let setUI = function() {
-// Bangle.setUI code from rigrig's smessages app for volume control: https://git.tubul.net/rigrig/BangleApps/src/branch/personal/apps/smessages/app.js
   Bangle.setUI(
-    {mode : "updown",
-      remove : ()=>{
-        Bangle.removeListener("touch", touchHandler);
-        Bangle.removeListener("swipe", swipeHandler);
-        clearWatch(buttonHandler);
-        widgetUtils.show();
-      }
-    },
-      ud => {
-        if (ud) Bangle.musicControl(ud>0 ? "volumedown" : "volumeup");
-      }
+    {mode : "custom",
+     touch: touchHandler,
+     swipe: swipeHandler,
+     drag: dragHandler,
+     btn: ()=>Bangle.load(),
+     remove : ()=>widgetUtils.show(),
+    }
   );
-  Bangle.on("touch", touchHandler);
-  Bangle.on("swipe", swipeHandler);
-  let buttonHandler = setWatch(()=>{load();}, BTN, {edge:'falling'});
 };
 
 // Get back to the main layout
@@ -210,7 +268,7 @@ let spotifyMenu = {
   "Search and play" : ()=>{E.showMenu(searchMenu);},
   "Saved music" : ()=>{E.showMenu(savedMenu);},
   "Wake the android" : function() {gadgetbridgeWake();gadgetbridgeWake();},
-  "Exit Spotify Remote" : ()=>{load();}
+  "Exit Spotify Remote" : ()=>{Bangle.load();}
 };
 
 let menuBackFunc = ()=>{
@@ -226,7 +284,7 @@ let controlMenu = {
   "Previous" : ()=>{spotifyWidget("PREVIOUS");},
   "Next" : ()=>{spotifyWidget("NEXT");},
   "Play (widget, next then previous)" : ()=>{spotifyWidget("NEXT"); spotifyWidget("PREVIOUS");},
-  "Messages Music Controls" : ()=>{load("messagesmusic.app.js");},
+  "Messages Music Controls" : ()=>{Bangle.load("messagesmusic.app.js");},
 };
 
 let searchMenu = {

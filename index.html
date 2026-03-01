@@ -52,7 +52,7 @@
         <a href="javascript:showTab('myappscontainer')">My Apps</a>
       </li>
       <li class="tab-item" id="tab-morecontainer">
-        <a href="javascript:showTab('morecontainer')">More...</a>
+        <a href="javascript:showTab('morecontainer')">More</a>
       </li>
     </ul>
 
@@ -85,6 +85,7 @@
           <label class="chip tooltip" filterid="ram" data-tooltip="Apps that don't save anything to flash memory">Online</label>
           <label class="chip tooltip" filterid="clkinfo" data-tooltip="Info displayed on clocks, or clocks with info">Clock Info</label>
           <label class="chip tooltip" filterid="health" data-tooltip="Apps for your health">Health</label>
+          <label class="chip tooltip" filterid="fonts" data-tooltip="Extra fonts for non-latin languages">Fonts</label>
           <label class="chip tooltip" filterid="favourites" data-tooltip="Apps that you've liked ❤️">Favourites</label>
         </div>
         <div class="sort-nav hidden">
@@ -146,6 +147,8 @@
            <button class="btn tooltip" id="installfavourite" data-tooltip="Delete everything, install your favourites">Install favourite apps</button>
            <button class="btn tooltip" id="defaultbanglesettings" data-tooltip="Reset your Bangle's settings to the defaults">Reset Settings</button>
         </p><p>
+           <button class="btn tooltip" id="installappfromfiles" data-tooltip="Install an app by selecting its files">Install App from Files</button>
+        </p><p>
            <button class="btn tooltip" id="newGithubIssue" data-tooltip="Create a new issue on GitHub">New issue on GitHub</button>
         </p>
         <h3>Settings</h3>
@@ -161,6 +164,10 @@
           <label class="form-switch">
             <input type="checkbox" id="settings-ble-compat">
             <i class="form-icon"></i> Bluetooth Compatibility mode (limit to 20 byte writes)
+          </label>
+          <label class="form-switch">
+            <input type="checkbox" id="settings-nopacket">
+            <i class="form-icon"></i> File Upload Compatibility mode (disables binary packet upload)
           </label>
           <label class="form-switch">
             <input type="checkbox" id="settings-usage-stats">
@@ -209,14 +216,25 @@
       </div>
     </footer>
 
-    <script src="webtools/puck.js"></script>
+    <script src="webtools/uart.js"></script>
+    <script src="core/js/utils.js"></script>
+    <script>
+      UART.ports = UART.ports.filter(e => e.includes("Bluetooth")); // all watches are Bluetooth
+      Const.CONNECTION_DEVICE = "Bluetooth"; // force Bluetooth because we know (don't look it up)#
+      // If "?dev=Bangle.js abcd" specified in URL, filter by that name
+      if (window.location.search) {
+        let searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.has("dev"))
+          UART.optionsBluetooth.filters=[{name:searchParams.get("dev")}];
+      }
+    </script>
     <script src="webtools/heatshrink.js"></script>
     <script src="core/lib/marked.min.js"></script>
     <script src="core/lib/espruinotools.js"></script>
-    <script src="core/js/utils.js"></script>
     <script src="loader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script> <!-- for backup.js -->
     <script src="backup.js"></script>
+    <script src="install_from_files.js"></script>
     <script src="core/js/ui.js"></script>
     <script src="core/js/comms.js"></script>
     <script src="core/js/appinfo.js"></script>
