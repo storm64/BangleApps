@@ -3,7 +3,7 @@
   "name": "6 Tiles Clock",
   "shortName": "6TilesClk",
   "version": "0.03",
-  "description": "This clock displays date, day of week, week number, time and 6 tiles that show available information from the clock_info library.",
+  "description": "A highly customizeable watchface that displays a date line, the time and 6 clockinfo tiles that can be filtered.",
   "icon": "app.png",
   "type": "clock",
   "tags": "clock,clkinfo",
