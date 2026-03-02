@@ -78,11 +78,11 @@
 
     // draw hours on change
     if (changed.h) {
-      let hours = ((opt.leading0 ? "0" : " ") + (opt.is12Hour ?
+      let hours = ((opt.leading0 ? "0" : " ") + (opt.hours24 ?
         (time.getHours()-1)%12+1 : time.getHours())).substr(-2) + ":";
       g.reset().clearRect(2, y - 29, 99, y + 20).setFont("Vector:66").setFontAlign(1);
       g.drawString(hours, 100, y);
-      if (opt.is12Hour) g.setFont6x15().setFontAlign().drawString(
+      if (opt.hours24) g.setFont6x15().setFontAlign().drawString(
         time.getHours() < 12 ? "am" : "pm", 88, y - 21);
     }
 
@@ -175,10 +175,10 @@
       {x: 59, y: y[2], x2: 116, y2: y[3]},
       {x: 118, y: y[2], x2: 175, y2: y[3]}
     ];
-    let infoRect = [
+    /*let infoRect = [
       {x: 0, y: y[2], x2: 175, y2: y[3]},
       {x: 0, y: y[0], x2: 175, y2: y[3]}
-    ];
+    ];*/
     // setup clock_info items
     global["6tclk"].tileItems = tileRect.map(function(rect, index) {
       // get tile settings

@@ -1,7 +1,7 @@
 {
   "fullscreen": false,
   "frameColor": 33808,
-  "is12Hour": false,
+  "hours24": true,
   "leading0": true,
   "loadWidgets": true,
   "woy": "",

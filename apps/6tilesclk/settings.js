@@ -5,7 +5,7 @@
   let settings = Object.assign({
     frameColor: 33808,
     fullscreen: false,
-    is12Hour: false,
+    hours24: true,
     leading0: true,
     loadWidgets: true,
     woy: "",
@@ -76,9 +76,9 @@
         value: settings.fullscreen,
         onchange: v => save("fullscreen", v)
       },
-      /*LANG*/"12h Format": {
-        value: settings.is12Hour,
-        onchange: v => save("is12Hour", v)
+      /*LANG*/"24h Format": {
+        value: settings.hours24,
+        onchange: v => save("hours24", v)
       },
       /*LANG*/"Hour Format": {
         value: settings.leading0,
