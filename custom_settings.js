@@ -6,8 +6,8 @@ const CUSTOMSETTINGS = {
   autoReload: true, //  Automatically reload watch after app App Loader actions (removes "Hold button" prompt))
 };
 window.addEventListener('load', function () {
-    if (DEFAULTSETTINGS == SETTINGS) {
+    if (JSON.stringify(DEFAULTSETTINGS) == JSON.stringify(SETTINGS)) {
         SETTINGS = JSON.parse(JSON.stringify(CUSTOMSETTINGS)); // clone
-
+        saveSettings();
     }
 });
