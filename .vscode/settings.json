@@ -1,13 +1,7 @@
 {
     "files.exclude": {
         ".github": true,
-        "core/.github": true,
-        "core/img": true,
-        "core/lib": true,
-        "core/tools": true,
-        "core/*.*": true,
-        "core/LICENSE": true,
-        "core/js/*[!index.js]*": true,
+        "core": true,
         "bin": true,
         "css/*[!main.css]*": true,
         "img": true,
