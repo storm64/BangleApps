@@ -7,7 +7,8 @@
   "type": "clkinfo",
   "tags": "clkinfo,sched,alarm,timer",
   "supports" : ["BANGLEJS2"],
+  "dependencies" : { "sched":"module" },
   "storage": [
     {"name":"nextsched.clkinfo.js","url":"clkinfo.js"}
   ]
-}   
+}

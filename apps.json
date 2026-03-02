@@ -17,7 +17,7 @@
 # apps to be available on your site
 
 # restricted: ["boot", "launch", "antonclk", "health", "setting", "about", "widbat", "widbt", "widlock", "widid"]
-restricted: ["6tilesclk", "nextsched"]
+restricted: ["6tilesclk", "nextsched", "sched", "clock_info"]
 ---
 
 {%- if page.restricted == nil -%}

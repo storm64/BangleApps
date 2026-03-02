@@ -199,7 +199,7 @@
         "apps/clockcal": true,
         "apps/clockinfolist": true,
         "apps/clockswitch": true,
-        "apps/clock_info": true,
+        "apps/clock_info": false,
         "apps/clotris": true,
         "apps/cogclock": true,
         "apps/coin_info": true,
@@ -836,5 +836,7 @@
         "apps/_example_clkinfo": true,
         "apps/_example_clock": true,
         "apps/_example_widget": true
+    },
+    "search.exclude": {
     }
 }
