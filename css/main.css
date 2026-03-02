@@ -6,7 +6,7 @@
     }
 
     .navbar {
-      background-color: #5755d9;
+      background-color: #ff7f00;
       padding: 1em 1em 1em 1em;
     }
 
@@ -243,7 +243,7 @@
       }
     }
 
- 
+
 
     /* TABS */
     .tab.tab-block .tab-item {
@@ -288,7 +288,7 @@
       left: 0;
       height: 3px;
       width: calc(100% / 3);
-      background: #5755d9;
+      background: #ff7f00;
       border-radius: 100px;
       transform: translateX(0%);
       transition: transform 320ms cubic-bezier(.2, .9, .3, 1), width 320ms cubic-bezier(.2, .9, .3, 1);
@@ -400,15 +400,15 @@
 
     .tile.column.col-6.col-sm-12.col-xs-12.app-tile {
       background-color: rgba(87, 85, 217, 0.025);
-      
+
       box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.025);
-      
+
       border: solid 1.3px #dadee47c;
       margin: 0;
       /* spacing handled by container gap */
       padding: 0.9em;
       border-radius: 1em;
-      
+
 
       box-sizing: border-box;
       /* allow tiles to be two columns on wide screens, collapse to one on small screens */

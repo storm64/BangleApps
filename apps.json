@@ -1,9 +1,9 @@
 ---
 # =================================================================
 #    ALL THE INFORMATION INSIDE APPS.JSON HAS NOW BEEN MOVED
-# 
+#
 #  You'll find it inside a file called apps/yourapp/metadata.json
-# 
+#
 #  Otherwise nothing has changed. GitHub Pages will automatically
 #  create apps.json as your site is hosted, or if you're hosting
 #  yourself you can run bin/create_apps_json.sh
@@ -18,6 +18,8 @@
 
 # restricted: ["boot", "launch", "antonclk", "health", "setting", "about", "widbat", "widbt", "widlock", "widid"]
 ---
+restricted: ["6tilesclk", "nextsched"]
+
 {%- if page.restricted == nil -%}
     {%- assign apps = site.static_files | where: "name", "metadata.json" | map: "path" -%}
 {%- else -%}
