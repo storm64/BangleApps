@@ -17,8 +17,8 @@
 # apps to be available on your site
 
 # restricted: ["boot", "launch", "antonclk", "health", "setting", "about", "widbat", "widbt", "widlock", "widid"]
-restricted: ["6tilesclk", "nextsched"]
 ---
+restricted: ["6tilesclk", "nextsched"]
 
 {%- if page.restricted == nil -%}
     {%- assign apps = site.static_files | where: "name", "metadata.json" | map: "path" -%}
