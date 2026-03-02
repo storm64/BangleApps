@@ -107,4 +107,4 @@
     dynamic: true,
     items: getItems(true)
   }];
-});
+})
