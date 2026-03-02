@@ -7,7 +7,7 @@ const CUSTOMSETTINGS = {
 };
 window.addEventListener('load', function () {
     if (JSON.stringify(DEFAULTSETTINGS) == JSON.stringify(SETTINGS)) {
-        SETTINGS = JSON.parse(JSON.stringify(CUSTOMSETTINGS)); // clone
-        saveSettings();
+      SETTINGS = Object.assign(DEFAULTSETTINGS, CUSTOMSETTINGS);
+      saveSettings();
     }
 });
