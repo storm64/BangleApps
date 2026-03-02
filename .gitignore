@@ -3,7 +3,7 @@ node_modules
 .DS_Store
 *.js.bak
 appdates.csv
-.vscode
+#.vscode
 .idea/
 _config.yml
 tests/Layout/bin/tmp.*
@@ -15,4 +15,3 @@ _site
 Desktop.ini
 .sync_*.db*
 *.swp
-.order
