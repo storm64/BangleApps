@@ -72,7 +72,7 @@
 		// calculate spacing and x position
         let spacing = 176;
         values.forEach(e => spacing -= e[1]);
-        spacing /= 3;
+        spacing = Math.floor(spacing/4);
 		let xc = 0;
         values = values.map(e => e.concat((xc+=spacing+e[1])-Math.floor(e[1]/2)));
         // draw values
