@@ -74,7 +74,7 @@
         values.forEach(e => spacing -= e[1]);
         spacing /= 3;
 		let xc = 0;
-        values = values.map(e => e.concat(xc+=spacing+Math.ceil(e[1]/2)));
+        values = values.map(e => e.concat((xc+=spacing+e[1])-Math.ceil(e[1]/2)));
         // draw values
 		values.forEach(e => g.setFontAlign().drawString(e[0], e[2], dy));
       }
