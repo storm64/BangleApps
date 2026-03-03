@@ -68,15 +68,15 @@
         })[field]]));
 
 		// add string width
-        values = values.map(e => [e[0], g.stringWidth(e[0])]);
+        values = values.map(e => e.concat(g.stringWidth(e[0])));
 		// calculate spacing and x position
         let spacing = 176;
         values.forEach(e => spacing -= e[1]);
         spacing /= 3;
 		let xc = 0;
-        values = values.map(e => e.concat((xc+=spacing+e[1])-Math.ceil(e[1]/2)));
+        values = values.map(e => e.concat((xc+=spacing+e[1])-Math.floor(e[1]/2)));
         // draw values
-		values.forEach(e => g.setFontAlign().drawString(e[0], e[2], dy));
+		values.forEach(e => g.setFontAlign(0).drawString(e[0], e[2], dy));
       }
     }
 
