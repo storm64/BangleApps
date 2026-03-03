@@ -1,7 +1,18 @@
 { // start clock
   /*** image replacements ***/
-  let replaceImg = function(name, size) {
+  let replaceImg = function(name, size, oImg) {
+    /*if (false) { // for debugging only
+      print("replaceImg fn call:");
+      print("name = ", name);
+      print("size = ", size);
+      print("oImg = ", oImg);
+    }*/
     if (typeof name != "string") return "";
+    // register special icon changes
+    let oImgCheck = {
+      "Steps": {search: "|", rename: n => n+" off"}
+    }[name];
+    if (oImgCheck && (""+oImg).includes(oImgCheck.search)) name = oImgCheck.rename(name);
     // simple replacements
     let img = {
       "Bangle|16": "EBCBAAfAB8AHwAxgGTAxGCEIIQ4gjiBIMBgYMAxgB8AHwAfA",
@@ -34,6 +45,7 @@
     let fs = opt.fullscreen;
     g.reset();
     let color = typeof opt.frameColor === "number" ? opt.frameColor : g.theme[opt.frameColor];
+    print("color: ", color);
     if (color) g.setColor(color);
     g.drawRect(-1, fs ? -1 : 25, 176, fs ? 25 : 43);
     g.drawRect(-1, fs ? 84 : 98, 176, fs ? 130 : 137);
@@ -99,6 +111,12 @@
   };
   // function to draw each tile
   let drawTile = function(itm, get, opt) {
+    /*if (opt.tileNo == 3) { // for debugging only
+      print("drawTile fn call:");
+      //print("itm = ", Object.keys(itm));
+      //print("get = ", Object.keys(get));
+      print("opt = ", opt);
+    }*/
     let fs = opt.fs;
     // setup positions
     let rect = opt.rect;
@@ -129,7 +147,7 @@
     // get menuA image
     let imgA = itm.img;
     // try to get replacement menuB img
-    let imgB = atob(replaceImg(itm.name, displSize)) || get.img;
+    let imgB = atob(replaceImg(itm.name, displSize, get.img)) || get.img;
     // hide menuA image if no text is set or menuB image is in landscape format
     if (!text || imgB && g.imageMetrics(imgB).width > g.imageMetrics(imgB).height) imgA = 0;
 
@@ -163,6 +181,20 @@
       center: true
     });
     g.drawImages(images);
+
+    // draw group count on multiple groups
+    if (opt.focus && (opt.nBs || []).length > 1) {
+      let r = opt.rect;
+      let n = opt.nBs.length;
+      let w = 4;
+      let s = 4;
+      let x0 = (r.x + r.x2) / 2 + 0.5 - (w + s) / 2 * n + s / 2;
+      opt.nBs.forEach((e, i) => {
+        let x = x0 + (w + s) * i;
+        if (i == opt.menuA) g.setColor(opt.hl); else g.reset();
+        g.drawRect(x, r.y, x + w, r.y + 1);
+      });
+    }
   };
 
   /*** clock_info initialisation ***/
@@ -202,7 +234,7 @@
       infoItems = infoItems.map(mA => {
         // check to replace menuA image and insert into each item
         mA.items.map(mB => {
-          mB.img = atob(replaceImg(mA.name, fs ? 24 : 16)) || mA.img;
+          mB.img = atob(replaceImg(mA.name, fs ? 24 : 16, mA.img)) || mA.img;
           return mB;
         });
         // clear image from menuA
