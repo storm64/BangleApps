@@ -1,6 +1,7 @@
 { // start clock
   /*** image replacements ***/
   let replaceImg = function(name, size) {
+    if (typeof name != "string") return "";
     // simple replacements
     let img = {
       "Bangle|16": "EBCBAAfAB8AHwAxgGTAxGCEIIQ4gjiBIMBgYMAxgB8AHwAfA",
@@ -83,10 +84,10 @@
     // draw hours on change
     if (changed.h) {
       let hours = ((opt.leading0 ? "0" : " ") + (opt.hours24 ?
-        (time.getHours()-1)%12+1 : time.getHours())).substr(-2) + ":";
+        time.getHours())).substr(-2) + ":" : (time.getHours()-1)%12+1;
       g.reset().clearRect(2, y - 29, 99, y + 20).setFont("Vector:66").setFontAlign(1);
       g.drawString(hours, 100, y);
-      if (opt.hours24) g.setFont6x15().setFontAlign().drawString(
+      if (!opt.hours24) g.setFont6x15().setFontAlign().drawString(
         time.getHours() < 12 ? "am" : "pm", 88, y - 21);
     }
 
