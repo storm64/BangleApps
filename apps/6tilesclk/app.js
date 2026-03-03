@@ -61,18 +61,22 @@
           (" " + Math.ceil((dpy + (yf.getDay() - 11) % 7 + 3) / 7)).slice(-2);
 
         // setup values according to settings
-        let values = opt.dateLine.map(field => ({
+		let values = opt.dateLine.map(field => ([({
           date: require("locale").date(time, 1),
           dow: require("date_utils").dows(0, 1)[time.getDay()],
-          woy: woy
-        })[field]);
+          woy: 12
+        })[field]]));
 
-        // set y position and draw values
-        g.setFontAlign(-1).drawString(values[0], 1, dy);
-        g.setFontAlign(1).drawString(values[2], 176, dy);
-        let v0x2 = 1 + g.stringWidth(values[0]);
-        let v2x1 = 176 - g.stringWidth(values[2]);
-        g.setFontAlign().drawString(values[1], (v0x2 + v2x1) / 2 + 1.4, dy);
+		// add string width
+        values = values.map(e => [e[0], g.stringWidth(e[0])]);
+		// calculate spacing and x position
+        let spacing = 176;
+        values.forEach(e => spacing -= e[1]);
+        spacing /= 3;
+		let xc = 0;
+        values = values.map(e => e.concat(xc+=spacing+Math.ceil(e[1]/2)));
+        // draw values
+		values.forEach(e => g.setFontAlign().drawString(e[0], e[2], dy));
       }
     }
 
