@@ -64,7 +64,7 @@
 		let values = opt.dateLine.map(field => ([({
           date: require("locale").date(time, 1),
           dow: require("date_utils").dows(0, 1)[time.getDay()],
-          woy: 12
+          woy: woy
         })[field]]));
 
 		// add string width
