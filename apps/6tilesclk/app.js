@@ -84,7 +84,7 @@
     // draw hours on change
     if (changed.h) {
       let hours = ((opt.leading0 ? "0" : " ") + (opt.hours24 ?
-        time.getHours())).substr(-2) + ":" : (time.getHours()-1)%12+1;
+        time.getHours() : (time.getHours()-1)%12+1)).substr(-2) + ":";
       g.reset().clearRect(2, y - 29, 99, y + 20).setFont("Vector:66").setFontAlign(1);
       g.drawString(hours, 100, y);
       if (!opt.hours24) g.setFont6x15().setFontAlign().drawString(
